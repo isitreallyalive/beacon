@@ -1,0 +1,6 @@
+[workspace]
+resolver = "3"
+members = ["src/bin"]
+
+[workspace.dependencies]
+cargo-husky = { version = "1.5.0", default-features = false }
