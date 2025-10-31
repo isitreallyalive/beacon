@@ -5,4 +5,4 @@ cargo fmt --all
 cargo autoinherit --prefer-simple-dotted
 
 # re-add any files that were modified by the above commands
-git add $(git diff --name-only --cached)
+git add --update
