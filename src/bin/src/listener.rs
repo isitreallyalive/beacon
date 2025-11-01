@@ -1,5 +1,6 @@
 use std::net::TcpListener;
 
+use beacon_config::Config;
 use bevy_ecs::prelude::*;
 
 #[derive(Resource)]
@@ -14,9 +15,10 @@ impl std::ops::Deref for Listener {
 }
 
 impl Listener {
-    /// Bind a TCP listener to the specified port on all interfaces.
-    pub fn bind(port: u16) -> std::io::Result<Self> {
+    pub fn setup(world: &mut World) -> std::io::Result<()> {
+        let port = world.resource::<Config>().port;
         let listener = TcpListener::bind(format!("0.0.0.0:{}", port))?;
-        Ok(Listener(listener))
+        world.insert_resource(Listener(listener));
+        Ok(())
     }
 }

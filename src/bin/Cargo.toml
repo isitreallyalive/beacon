@@ -3,9 +3,15 @@ name = "beacon"
 version.workspace = true
 edition.workspace = true
 
+[features]
+debug = ["bevy_utils/debug"]
+
 [dependencies]
 beacon-config.workspace = true
 bevy_ecs.workspace = true
+bevy_utils = { workspace = true, optional = true }
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [dev-dependencies]
 cargo-husky = { workspace = true, features = ["user-hooks"] }

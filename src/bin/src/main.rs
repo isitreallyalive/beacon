@@ -6,9 +6,13 @@ use crate::listener::Listener;
 mod listener;
 
 fn main() -> Result<()> {
-    let config = Config::read("beacon.toml")?;
+    tracing_subscriber::fmt::fmt()
+        .with_max_level(tracing::Level::TRACE)
+        .init();
+
     let (mut world, mut schedule) = (World::new(), Schedule::default());
-    world.insert_resource(Listener::bind(config.port)?);
+    Config::setup(&mut world, &mut schedule, "beacon.toml")?;
+    Listener::setup(&mut world)?;
 
     loop {
         schedule.run(&mut world);
