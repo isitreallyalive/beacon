@@ -1,9 +1,12 @@
 use beacon_config::Config;
 use bevy_ecs::prelude::*;
 
-use crate::listener::Listener;
+use crate::net::{Game, Listener, Query, Rcon};
 
-mod listener;
+#[macro_use]
+extern crate tracing;
+
+mod net;
 
 fn main() -> Result<()> {
     tracing_subscriber::fmt::fmt()
@@ -11,8 +14,10 @@ fn main() -> Result<()> {
         .init();
 
     let (mut world, mut schedule) = (World::new(), Schedule::default());
-    Config::setup(&mut world, &mut schedule, "beacon.toml")?;
-    Listener::setup(&mut world)?;
+    let config = Config::setup(&mut world, &mut schedule, "beacon.toml")?;
+    Game::setup(&mut world, &config.server)?;
+    Rcon::setup(&mut world, &config.rcon)?;
+    Query::setup(&mut world, &config.query)?;
 
     loop {
         schedule.run(&mut world);
