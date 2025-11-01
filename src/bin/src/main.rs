@@ -1,6 +1,11 @@
 use beacon_config::Config;
 use bevy_ecs::prelude::*;
 
+use crate::net::{
+    conn::{self, TcpConnection},
+    listen,
+};
+
 mod net;
 
 fn main() -> Result<()> {
@@ -14,8 +19,11 @@ fn main() -> Result<()> {
     let config = Config::setup(&mut world, &mut schedule, "beacon.toml")?;
 
     // setup listeners
-    world.insert_resource(net::Game::new(&config)?);
-    schedule.add_systems(net::update);
+    world.insert_resource(listen::GameListener::new(&config)?);
+    schedule.add_systems((listen::update, conn::QueryConnection::handle));
+    conn::GameConnection::register(&mut schedule);
+    conn::RconConnection::register(&mut schedule);
+    conn::MsmpConnection::register(&mut schedule);
 
     loop {
         schedule.run(&mut world);

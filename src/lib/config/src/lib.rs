@@ -199,6 +199,7 @@ config! {
     }
 }
 
+// todo: duplicate ports are not allowed
 fn deserialize_port<'de, D>(deserializer: D) -> Result<u16, D::Error>
 where
     D: serde::Deserializer<'de>,
