@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, path::Path};
+use std::path::Path;
 
 use bevy_ecs::prelude::*;
 use serde::Deserialize;
@@ -219,23 +219,3 @@ where
     }
     Ok(port)
 }
-
-/// A trait for configuration sections that provide a network listener address.
-pub trait HasListener {
-    fn address(&self) -> SocketAddr;
-}
-
-macro_rules! impl_listener {
-    ($config:ty) => {
-        impl HasListener for $config {
-            fn address(&self) -> SocketAddr {
-                SocketAddr::new(self.ip, self.port)
-            }
-        }
-    };
-}
-
-impl_listener!(ServerConfig);
-impl_listener!(QueryConfig);
-impl_listener!(RconConfig);
-impl_listener!(MsmpConfig);

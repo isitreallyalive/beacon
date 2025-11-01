@@ -1,2 +1,10 @@
 [server]
-ip = "127.0.0.1"
+
+[rcon]
+enable = true
+
+[query]
+enable = true
+
+[msmp]
+enable = true
