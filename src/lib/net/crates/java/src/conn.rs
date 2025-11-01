@@ -1,17 +1,16 @@
 use std::net::{SocketAddr, TcpStream};
 
+use beacon_net::Connection;
 use bevy_ecs::prelude::*;
 
-use crate::net::listen::GameListener;
-
 #[derive(Component)]
-pub struct GameConnection {
+pub struct JavaConnection {
     conn: TcpStream,
     addr: SocketAddr,
 }
 
-impl super::Connection for GameConnection {
-    type Listener = GameListener;
+impl Connection for JavaConnection {
+    type Listener = crate::JavaListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {
         Self { conn, addr }
@@ -22,7 +21,7 @@ impl super::Connection for GameConnection {
     }
 }
 
-impl std::ops::Deref for GameConnection {
+impl std::ops::Deref for JavaConnection {
     type Target = TcpStream;
     fn deref(&self) -> &Self::Target {
         &self.conn

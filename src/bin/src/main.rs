@@ -1,12 +1,6 @@
 use beacon_config::Config;
+use beacon_net::{Connection, Listener};
 use bevy_ecs::prelude::*;
-
-use crate::net::{
-    conn::{self, Connection},
-    listen,
-};
-
-mod net;
 
 fn main() -> Result<()> {
     // setup logging
@@ -19,12 +13,13 @@ fn main() -> Result<()> {
     let config = Config::setup(&mut world, &mut schedule, "beacon.toml")?;
 
     // setup listeners
-    world.insert_resource(listen::GameListener::new(&config)?);
-    schedule.add_systems(listen::update);
-    beacon_query::QueryListener::register(&mut schedule);
-    conn::GameConnection::register(&mut schedule);
-    conn::RconConnection::register(&mut schedule);
-    conn::MsmpConnection::register(&mut schedule);
+    beacon_java::JavaListener::register(&mut world, &mut schedule, &config)?;
+    beacon_java::JavaConnection::register(&mut schedule);
+    beacon_msmp::MsmpListener::register(&mut world, &mut schedule, &config)?;
+    beacon_msmp::MsmpConnection::register(&mut schedule);
+    beacon_query::QueryListener::register(&mut world, &mut schedule, &config)?;
+    beacon_rcon::RconListener::register(&mut world, &mut schedule, &config)?;
+    beacon_rcon::RconConnection::register(&mut schedule);
 
     loop {
         schedule.run(&mut world);

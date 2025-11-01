@@ -1,17 +1,16 @@
 use std::net::{SocketAddr, TcpStream};
 
+use beacon_net::Connection;
 use bevy_ecs::prelude::*;
 
-use crate::net::listen::MsmpListener;
-
 #[derive(Component)]
-pub struct MsmpConnection {
+pub struct RconConnection {
     conn: TcpStream,
     addr: SocketAddr,
 }
 
-impl super::Connection for MsmpConnection {
-    type Listener = MsmpListener;
+impl Connection for RconConnection {
+    type Listener = crate::RconListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {
         Self { conn, addr }
@@ -22,7 +21,7 @@ impl super::Connection for MsmpConnection {
     }
 }
 
-impl std::ops::Deref for MsmpConnection {
+impl std::ops::Deref for RconConnection {
     type Target = TcpStream;
     fn deref(&self) -> &Self::Target {
         &self.conn

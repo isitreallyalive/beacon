@@ -10,6 +10,7 @@ debug = ["bevy_utils/debug"]
 beacon-config.workspace = true
 beacon-java.workspace = true
 beacon-msmp.workspace = true
+beacon-net.workspace = true
 beacon-query.workspace = true
 beacon-rcon.workspace = true
 bevy_ecs.workspace = true

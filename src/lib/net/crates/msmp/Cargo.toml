@@ -4,4 +4,6 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+beacon-config.workspace = true
 beacon-net.workspace = true
+bevy_ecs.workspace = true

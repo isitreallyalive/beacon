@@ -6,6 +6,7 @@ use std::{
 };
 
 use beacon_config::Config;
+use beacon_net::{Listener, update_listener};
 use bevy_ecs::prelude::*;
 use byteorder::{BigEndian, ReadBytesExt};
 
@@ -33,8 +34,8 @@ pub struct QueryListener {
     tokens: HashMap<SocketAddr, i32>,
 }
 
-impl QueryListener {
-    pub fn new(config: &Config) -> io::Result<Self> {
+impl Listener for QueryListener {
+    fn new(config: &Config) -> io::Result<Self> {
         let sock = UdpSocket::bind((config.query.ip, config.query.port))?;
         sock.set_nonblocking(true)?;
         Ok(Self {
@@ -44,10 +45,10 @@ impl QueryListener {
         })
     }
 
-    pub fn register(schedule: &mut Schedule) {
-        schedule.add_systems((Self::recv, Self::clear_tokens));
-    }
+    update_listener!(QueryListener: query);
+}
 
+impl QueryListener {
     fn recv(query: Option<ResMut<QueryListener>>, config: Res<Config>) -> Result<()> {
         if let Some(mut query) = query {
             let mut buf = [0u8; 1500]; // typical mtu
