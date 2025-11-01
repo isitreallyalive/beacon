@@ -1,0 +1,6 @@
+[package]
+name = "beacon-net"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

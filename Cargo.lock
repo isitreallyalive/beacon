@@ -68,7 +68,10 @@ name = "beacon"
 version = "0.0.0"
 dependencies = [
  "beacon-config",
+ "beacon-java",
+ "beacon-msmp",
  "beacon-query",
+ "beacon-rcon",
  "bevy_ecs",
  "bevy_utils",
  "cargo-husky",
@@ -90,13 +93,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "beacon-java"
+version = "0.0.0"
+dependencies = [
+ "beacon-net",
+]
+
+[[package]]
+name = "beacon-msmp"
+version = "0.0.0"
+dependencies = [
+ "beacon-net",
+]
+
+[[package]]
+name = "beacon-net"
+version = "0.0.0"
+
+[[package]]
 name = "beacon-query"
 version = "0.0.0"
 dependencies = [
  "beacon-config",
+ "beacon-net",
  "bevy_ecs",
  "byteorder",
  "rand",
+]
+
+[[package]]
+name = "beacon-rcon"
+version = "0.0.0"
+dependencies = [
+ "beacon-net",
 ]
 
 [[package]]

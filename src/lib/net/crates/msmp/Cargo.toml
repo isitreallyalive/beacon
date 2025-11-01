@@ -1,0 +1,7 @@
+[package]
+name = "beacon-msmp"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+beacon-net.workspace = true

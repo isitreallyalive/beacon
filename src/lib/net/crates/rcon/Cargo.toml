@@ -1,0 +1,7 @@
+[package]
+name = "beacon-rcon"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+beacon-net.workspace = true
