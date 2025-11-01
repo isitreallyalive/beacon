@@ -17,7 +17,7 @@ impl Connection for RconConnection {
     }
 
     fn handle(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
-        for (entity, mut conn) in connections.iter_mut() {}
+        for (entity, conn) in connections.iter_mut() {}
     }
 }
 
