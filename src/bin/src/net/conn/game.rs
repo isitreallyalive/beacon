@@ -10,7 +10,7 @@ pub struct GameConnection {
     addr: SocketAddr,
 }
 
-impl super::TcpConnection for GameConnection {
+impl super::Connection for GameConnection {
     type Listener = GameListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {

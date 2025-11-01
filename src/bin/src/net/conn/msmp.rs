@@ -10,7 +10,7 @@ pub struct MsmpConnection {
     addr: SocketAddr,
 }
 
-impl super::TcpConnection for MsmpConnection {
+impl super::Connection for MsmpConnection {
     type Listener = MsmpListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {

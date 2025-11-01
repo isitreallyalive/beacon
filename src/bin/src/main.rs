@@ -2,7 +2,7 @@ use beacon_config::Config;
 use bevy_ecs::prelude::*;
 
 use crate::net::{
-    conn::{self, TcpConnection},
+    conn::{self, Connection},
     listen,
 };
 
@@ -20,7 +20,7 @@ fn main() -> Result<()> {
 
     // setup listeners
     world.insert_resource(listen::GameListener::new(&config)?);
-    schedule.add_systems((listen::update, conn::QueryConnection::handle));
+    schedule.add_systems((listen::update, net::query::QueryListener::recv));
     conn::GameConnection::register(&mut schedule);
     conn::RconConnection::register(&mut schedule);
     conn::MsmpConnection::register(&mut schedule);

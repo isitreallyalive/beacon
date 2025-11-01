@@ -11,13 +11,10 @@ pub use game::GameConnection;
 mod msmp;
 pub use msmp::MsmpConnection;
 
-mod query;
-pub use query::QueryConnection;
-
 mod rcon;
 pub use rcon::RconConnection;
 
-pub(crate) trait TcpConnection: Component<Mutability = Mutable> + Sized {
+pub(crate) trait Connection: Component<Mutability = Mutable> + Sized {
     type Listener: Deref<Target = TcpListener> + Resource;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self;
@@ -34,7 +31,7 @@ pub(crate) trait TcpConnection: Component<Mutability = Mutable> + Sized {
                     commands.spawn(Self::new(conn, addr));
                 }
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // No connection ready, ignore
+                    // no incoming connection, non-blocking
                 }
                 Err(e) => {
                     eprintln!("failed to accept connection: {}", e);

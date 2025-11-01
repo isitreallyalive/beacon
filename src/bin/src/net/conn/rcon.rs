@@ -10,7 +10,7 @@ pub struct RconConnection {
     addr: SocketAddr,
 }
 
-impl super::TcpConnection for RconConnection {
+impl super::Connection for RconConnection {
     type Listener = RconListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {

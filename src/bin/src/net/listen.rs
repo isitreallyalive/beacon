@@ -1,10 +1,9 @@
-use std::{
-    io,
-    net::{TcpListener, UdpSocket},
-};
+use std::{io, net::TcpListener};
 
 use beacon_config::Config;
 use bevy_ecs::prelude::*;
+
+use crate::net::query::QueryListener;
 
 macro_rules! define {
     ($struct:ident ($field:ident): $socket:ty) => {
@@ -21,6 +20,7 @@ macro_rules! define {
         impl $struct {
             pub fn new(config: &Config) -> io::Result<Self> {
                 let listener = <$socket>::bind((config.$field.ip, config.$field.port))?;
+                listener.set_nonblocking(true)?;
                 Ok($struct(listener))
             }
         }
@@ -29,14 +29,13 @@ macro_rules! define {
 
 define!(GameListener(server): TcpListener);
 define!(RconListener(rcon): TcpListener);
-define!(QueryListener(query): UdpSocket);
 define!(MsmpListener(msmp): TcpListener);
 
 macro_rules! update {
     ($struct:ident ($field:ident); $config:expr, $commands:expr, $world:expr) => {
         let new_addr = ($config.$field.ip, $config.$field.port).into();
         let replace = match $world.get_resource::<$struct>() {
-            Some(existing) => existing.0.local_addr().ok() != Some(new_addr),
+            Some(existing) => existing.local_addr().ok() != Some(new_addr),
             None => true,
         };
         if replace {
