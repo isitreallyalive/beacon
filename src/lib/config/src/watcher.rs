@@ -46,10 +46,16 @@ impl ConfigWatcher {
                         .paths
                         .first()
                         .expect("there should always be a path associated with notify::Event");
-                    let config = Config::read(path)?;
-                    if *config_res != config {
-                        info!("config changed: {:?}", config);
-                        *config_res = config;
+                    match Config::read(path) {
+                        Ok(config) => {
+                            if *config_res != config {
+                                info!("config changed: {:?}", config);
+                                *config_res = config;
+                            }
+                        }
+                        Err(e) => {
+                            error!("failed to read updated config: {}", e);
+                        }
                     }
                 }
                 Err(e) => {

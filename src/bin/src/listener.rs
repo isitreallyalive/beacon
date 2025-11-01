@@ -16,8 +16,8 @@ impl std::ops::Deref for Listener {
 
 impl Listener {
     pub fn setup(world: &mut World) -> std::io::Result<()> {
-        let port = world.resource::<Config>().port;
-        let listener = TcpListener::bind(format!("0.0.0.0:{}", port))?;
+        let config = world.resource::<Config>();
+        let listener = TcpListener::bind(config.addr())?;
         world.insert_resource(Listener(listener));
         Ok(())
     }

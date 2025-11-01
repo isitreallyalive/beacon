@@ -2,11 +2,10 @@ use std::path::Path;
 
 use bevy_ecs::prelude::*;
 
-use crate::watcher::ConfigWatcher;
-
 #[macro_use]
 extern crate tracing;
 
+mod server;
 mod watcher;
 
 #[derive(Debug, thiserror::Error)]
@@ -19,10 +18,10 @@ pub enum ConfigError {
     ParseError(#[from] toml::de::Error),
 }
 
-#[derive(Resource, serde::Deserialize, Debug, PartialEq, Eq)]
+#[derive(Resource, serde::Deserialize, Default, Debug, PartialEq, Eq)]
+#[serde(default)]
 pub struct Config {
-    // todo: validation
-    pub port: u16,
+    pub server: server::Server,
 }
 
 impl Config {
@@ -39,7 +38,7 @@ impl Config {
         let path = path.as_ref();
         let config = Config::read(path)?;
         world.insert_resource(config);
-        ConfigWatcher::setup(world, schedule, path)?;
+        watcher::ConfigWatcher::setup(world, schedule, path)?;
         Ok(())
     }
 }
