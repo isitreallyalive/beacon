@@ -20,7 +20,8 @@ fn main() -> Result<()> {
 
     // setup listeners
     world.insert_resource(listen::GameListener::new(&config)?);
-    schedule.add_systems((listen::update, beacon_query::QueryListener::recv));
+    schedule.add_systems(listen::update);
+    beacon_query::QueryListener::register(&mut schedule);
     conn::GameConnection::register(&mut schedule);
     conn::RconConnection::register(&mut schedule);
     conn::MsmpConnection::register(&mut schedule);

@@ -6,3 +6,5 @@ edition.workspace = true
 [dependencies]
 beacon-config.workspace = true
 bevy_ecs.workspace = true
+byteorder.workspace = true
+rand.workspace = true
