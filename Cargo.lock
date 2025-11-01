@@ -68,6 +68,7 @@ name = "beacon"
 version = "0.0.0"
 dependencies = [
  "beacon-config",
+ "beacon-query",
  "bevy_ecs",
  "bevy_utils",
  "cargo-husky",
@@ -86,6 +87,14 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+]
+
+[[package]]
+name = "beacon-query"
+version = "0.0.0"
+dependencies = [
+ "beacon-config",
+ "bevy_ecs",
 ]
 
 [[package]]

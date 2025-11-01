@@ -8,6 +8,7 @@ debug = ["bevy_utils/debug"]
 
 [dependencies]
 beacon-config.workspace = true
+beacon-query.workspace = true
 bevy_ecs.workspace = true
 bevy_utils = { workspace = true, optional = true }
 tracing.workspace = true

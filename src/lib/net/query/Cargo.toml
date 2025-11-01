@@ -1,0 +1,8 @@
+[package]
+name = "beacon-query"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+beacon-config.workspace = true
+bevy_ecs.workspace = true

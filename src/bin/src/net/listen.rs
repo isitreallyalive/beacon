@@ -1,9 +1,8 @@
 use std::{io, net::TcpListener};
 
 use beacon_config::Config;
+use beacon_query::QueryListener;
 use bevy_ecs::prelude::*;
-
-use crate::net::query::QueryListener;
 
 macro_rules! define {
     ($struct:ident ($field:ident): $socket:ty) => {
