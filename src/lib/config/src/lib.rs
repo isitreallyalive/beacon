@@ -8,6 +8,9 @@ extern crate tracing;
 
 mod watcher;
 
+/// Version of Minecraft that This server is compatible with
+pub const VERSION: &str = "1.21.10";
+
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     #[error("Failed to watch config file: {0}")]
@@ -22,6 +25,7 @@ pub enum ConfigError {
 #[serde(default)]
 pub struct Config {
     pub server: ServerConfig,
+    pub world: WorldConfig,
     pub query: QueryConfig,
     pub rcon: RconConfig,
     pub msmp: MsmpConfig,
@@ -110,7 +114,6 @@ macro_rules! config {
 // hide-online-players=false
 // initial-disabled-packs=
 // initial-enabled-packs=vanilla
-// level-name=world
 // level-seed=
 // level-type=minecraft\:normal
 // log-ips=true
@@ -160,6 +163,11 @@ config! {
 
         /// Maximum number of players allowed on the server.
         max_players: u32 = 20
+    }
+
+    struct WorldConfig {
+        /// Name of the world folder
+        name: String = "world".to_string(),
     }
 
     struct QueryConfig {

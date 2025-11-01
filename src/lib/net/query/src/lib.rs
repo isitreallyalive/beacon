@@ -10,9 +10,19 @@ use bevy_ecs::prelude::*;
 use byteorder::{BigEndian, ReadBytesExt};
 
 const MAGIC: u16 = 0xFEFD;
+// packet ids
 const HANDSHAKE: u8 = 0x09;
 const STAT: u8 = 0x00;
+// hardcoded stats
+const GAMETYPE: &[u8] = "SMP".as_bytes();
+const GAME_ID: &[u8] = "MINECRAFT".as_bytes();
+
 const CLEAR_INTERVAL: Duration = Duration::from_secs(30);
+
+fn write_string(buf: &mut Vec<u8>, s: &str) {
+    buf.extend(s.as_bytes());
+    buf.push(0); // null terminator
+}
 
 #[derive(Resource)]
 pub struct QueryListener {
@@ -38,7 +48,7 @@ impl QueryListener {
         schedule.add_systems((Self::recv, Self::clear_tokens));
     }
 
-    fn recv(query: Option<ResMut<QueryListener>>) -> Result<()> {
+    fn recv(query: Option<ResMut<QueryListener>>, config: Res<Config>) -> Result<()> {
         if let Some(mut query) = query {
             let mut buf = [0u8; 1500]; // typical mtu
             match query.sock.recv_from(&mut buf) {
@@ -60,21 +70,32 @@ impl QueryListener {
                     let mut out = vec![packet_type];
                     out.extend(&session_id.to_be_bytes());
 
-                    println!("Received query packet type {} from {}", packet_type, addr);
-
                     match packet_type {
                         HANDSHAKE => {
-                            // no payload
+                            // no request payload
+                            // write response
                             let challenge_token: i32 = rand::random();
                             query.tokens.insert(addr, challenge_token);
-                            // turn into null terminated string
-                            let token_str = format!("{}\0", challenge_token);
-                            out.extend(token_str.as_bytes());
-                            query.sock.send_to(&out, addr)?;
+                            write_string(&mut out, &challenge_token.to_string());
                         }
-                        STAT => {}
+                        STAT => {
+                            // validate token
+                            let challenge_token = data.read_i32::<BigEndian>()?;
+                            if query.tokens.get(&addr) != Some(&challenge_token) {
+                                return Ok(());
+                            }
+                            // write response
+                            write_string(&mut out, &config.server.motd); // motd
+                            out.extend(GAMETYPE); // gametype
+                            out.extend(GAME_ID); // game_id
+                            out.extend(beacon_config::VERSION.as_bytes()); // version
+                            write_string(&mut out, ""); // plugins
+                            write_string(&mut out, &config.world.name); // map
+                        }
                         _ => return Ok(()),
                     }
+
+                    query.sock.send_to(&out, addr)?;
                 }
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                     // no data available, non-blocking
