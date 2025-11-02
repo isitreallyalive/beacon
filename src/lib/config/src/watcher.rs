@@ -59,7 +59,7 @@ impl ConfigWatcher {
                     }
                 }
                 Err(e) => {
-                    error!("watch error: {:?}", e);
+                    error!("config watch error: {:?}", e);
                 }
             }
         }

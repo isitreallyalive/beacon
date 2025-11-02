@@ -11,3 +11,4 @@ bevy_ecs.workspace = true
 byteorder.workspace = true
 itoa.workspace = true
 rand.workspace = true
+tracing.workspace = true

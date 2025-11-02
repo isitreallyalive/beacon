@@ -100,6 +100,7 @@ dependencies = [
  "beacon-config",
  "beacon-net",
  "bevy_ecs",
+ "tracing",
 ]
 
 [[package]]
@@ -109,6 +110,7 @@ dependencies = [
  "beacon-config",
  "beacon-net",
  "bevy_ecs",
+ "tracing",
 ]
 
 [[package]]
@@ -117,6 +119,7 @@ version = "0.0.0"
 dependencies = [
  "beacon-config",
  "bevy_ecs",
+ "tracing",
 ]
 
 [[package]]
@@ -130,6 +133,7 @@ dependencies = [
  "byteorder",
  "itoa",
  "rand",
+ "tracing",
 ]
 
 [[package]]
@@ -139,6 +143,7 @@ dependencies = [
  "beacon-config",
  "beacon-net",
  "bevy_ecs",
+ "tracing",
 ]
 
 [[package]]

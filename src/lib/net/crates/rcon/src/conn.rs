@@ -10,6 +10,7 @@ pub struct RconConnection {
 }
 
 impl Connection for RconConnection {
+    const SERVICE_NAME: &'static str = "RCON";
     type Listener = crate::RconListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {

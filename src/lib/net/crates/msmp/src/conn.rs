@@ -10,6 +10,7 @@ pub struct MsmpConnection {
 }
 
 impl Connection for MsmpConnection {
+    const SERVICE_NAME: &'static str = "MSMP";
     type Listener = crate::MsmpListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {

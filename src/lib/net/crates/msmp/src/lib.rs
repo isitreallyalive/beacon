@@ -4,6 +4,9 @@ use beacon_config::Config;
 use beacon_net::{Listener, update_listener};
 use bevy_ecs::prelude::*;
 
+#[macro_use]
+extern crate tracing;
+
 mod conn;
 pub use conn::MsmpConnection;
 

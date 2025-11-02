@@ -7,6 +7,9 @@ use std::{
 use beacon_config::Config;
 use bevy_ecs::{component::Mutable, prelude::*};
 
+#[macro_use]
+extern crate tracing;
+
 pub trait Listener: Deref + Resource + Sized {
     fn register(world: &mut World, schedule: &mut Schedule, config: &Config) -> io::Result<()> {
         world.insert_resource(Self::new(config)?);
@@ -55,7 +58,7 @@ macro_rules! update_listener {
 }
 
 pub trait Connection: Component<Mutability = Mutable> + Sized {
-    // todo: update
+    const SERVICE_NAME: &'static str;
     type Listener: Deref<Target = TcpListener> + Resource;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self;
@@ -69,13 +72,14 @@ pub trait Connection: Component<Mutability = Mutable> + Sized {
         if let Some(listener) = listener {
             match listener.accept() {
                 Ok((conn, addr)) => {
+                    info!(service = Self::SERVICE_NAME, addr = ?addr, "accepted connection");
                     commands.spawn(Self::new(conn, addr));
                 }
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                     // no incoming connection, non-blocking
                 }
                 Err(e) => {
-                    eprintln!("failed to accept connection: {}", e);
+                    error!(service = Self::SERVICE_NAME, error = %e, "failed to accept connection");
                 }
             }
         }

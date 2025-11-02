@@ -10,6 +10,7 @@ pub struct JavaConnection {
 }
 
 impl Connection for JavaConnection {
+    const SERVICE_NAME: &'static str = "Server";
     type Listener = crate::JavaListener;
 
     fn new(conn: TcpStream, addr: SocketAddr) -> Self {

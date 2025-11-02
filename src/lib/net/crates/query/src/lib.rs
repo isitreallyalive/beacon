@@ -11,6 +11,9 @@ use beacon_net::{Listener, update_listener};
 use bevy_ecs::prelude::*;
 use byteorder::{BigEndian, ReadBytesExt};
 
+#[macro_use]
+extern crate tracing;
+
 mod stat;
 
 /// Magic number that every request starts with
@@ -22,7 +25,7 @@ const BUF_SIZE: usize = 2 + 1 + 4 + 4 + 4;
 const HANDSHAKE: u8 = 0x09;
 const STAT: u8 = 0x00;
 
-//// Token clearing interval
+/// Token clearing interval
 const CLEAR_INTERVAL: Duration = Duration::from_secs(30);
 
 #[derive(Resource)]
@@ -93,10 +96,16 @@ impl QueryListener {
 
                     match packet_type {
                         HANDSHAKE => {
-                            // no request payload
-                            // write response
-                            let challenge_token: i32 = rand::random();
-                            query.tokens.insert(addr, challenge_token);
+                            debug!(addr = ?addr, "received handshake");
+                            // write challenge token
+                            let challenge_token = match query.tokens.get(&addr) {
+                                Some(&token) => token,
+                                None => {
+                                    let token: i32 = rand::random::<i32>();
+                                    query.tokens.insert(addr, token);
+                                    token
+                                }
+                            };
                             write_string(&mut out, &challenge_token.to_string())?;
                         }
                         STAT => {
@@ -106,7 +115,7 @@ impl QueryListener {
                                 return Ok(());
                             }
                             // build stats
-                            let stats = stat::Stats {
+                            let stats = stat::StatsResponse {
                                 motd: &config.server.motd,
                                 map: &config.world.name,
                                 numplayers: &java_conns.iter().count().to_string(),
@@ -117,8 +126,10 @@ impl QueryListener {
                             // is the payload exactly 4 bytes (challenge token)?
                             let remaining = size.saturating_sub(data.position() as usize);
                             if remaining == 4 {
+                                debug!(addr = ?addr, "received full stat");
                                 stats.full(&mut out)?;
                             } else {
+                                debug!(addr = ?addr, "received basic stat");
                                 stats.basic(&mut out)?;
                             }
                         }
@@ -131,7 +142,7 @@ impl QueryListener {
                     // no data available, non-blocking
                 }
                 Err(e) => {
-                    eprintln!("Error receiving query packet: {}", e);
+                    error!("error receiving query packet: {}", e);
                 }
             }
         }
@@ -142,6 +153,7 @@ impl QueryListener {
         if let Some(mut query) = query {
             let now = Instant::now();
             if now.duration_since(query.last_clear) >= CLEAR_INTERVAL {
+                debug!(size = query.tokens.len(), "clearing query challenge tokens");
                 query.tokens.clear();
                 query.last_clear = now;
             }

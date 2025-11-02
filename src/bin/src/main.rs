@@ -15,11 +15,11 @@ fn main() -> Result<()> {
     // setup listeners
     beacon_java::JavaListener::register(&mut world, &mut schedule, &config)?;
     beacon_java::JavaConnection::register(&mut schedule);
-    // beacon_msmp::MsmpListener::register(&mut world, &mut schedule, &config)?;
-    // beacon_msmp::MsmpConnection::register(&mut schedule);
+    beacon_msmp::MsmpListener::register(&mut world, &mut schedule, &config)?;
+    beacon_msmp::MsmpConnection::register(&mut schedule);
     beacon_query::QueryListener::register(&mut world, &mut schedule, &config)?;
-    // beacon_rcon::RconListener::register(&mut world, &mut schedule, &config)?;
-    // beacon_rcon::RconConnection::register(&mut schedule);
+    beacon_rcon::RconListener::register(&mut world, &mut schedule, &config)?;
+    beacon_rcon::RconConnection::register(&mut schedule);
 
     loop {
         schedule.run(&mut world);

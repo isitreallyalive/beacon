@@ -7,3 +7,4 @@ edition.workspace = true
 beacon-config.workspace = true
 beacon-net.workspace = true
 bevy_ecs.workspace = true
+tracing.workspace = true

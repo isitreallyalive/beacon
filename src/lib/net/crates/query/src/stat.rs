@@ -12,6 +12,7 @@ const KV_PADDING: [u8; 10] = [0x01, 0x70, 0x6C, 0x61, 0x79, 0x65, 0x72, 0x5F, 0x
 const GAMETYPE: &str = "SMP";
 const GAME_ID: &str = "MINECRAFT";
 
+// keys for full stat
 const STAT_KEYS: [&str; 10] = [
     "hostname",
     "gametype",
@@ -25,7 +26,7 @@ const STAT_KEYS: [&str; 10] = [
     "hostip",
 ];
 
-pub(crate) struct Stats<'a> {
+pub(crate) struct StatsResponse<'a> {
     pub motd: &'a str,
     pub map: &'a str,
     pub numplayers: &'a str,
@@ -34,34 +35,37 @@ pub(crate) struct Stats<'a> {
     pub hostip: &'a str,
 }
 
-impl Stats<'_> {
+impl StatsResponse<'_> {
     const fn values(&self) -> [&str; 10] {
         [
-            &self.motd,
+            self.motd,
             GAMETYPE,
             GAME_ID,
             beacon_config::VERSION,
             "",
-            &self.map,
-            &self.numplayers,
-            &self.maxplayers,
-            &self.hostport,
-            &self.hostip,
+            self.map,
+            self.numplayers,
+            self.maxplayers,
+            self.hostport,
+            self.hostip,
         ]
     }
 
+    /// Respond in basic stat format
     pub fn basic<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
         for value in self.values() {
-            write_string(writer, &value)?;
+            write_string(writer, value)?;
         }
         Ok(())
     }
 
+    /// Respond in full stat format
     pub fn full<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+        // note: vanilla server would cache this every 5 seconds, but we won't
         writer.write_all(&HEADER_PADDING)?;
         for (key, value) in STAT_KEYS.iter().zip(self.values()) {
             write_string(writer, key)?;
-            write_string(writer, &value)?;
+            write_string(writer, value)?;
         }
         write_null(writer)?;
         writer.write_all(&KV_PADDING)?;
