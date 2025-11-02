@@ -25,3 +25,4 @@ beacon-java = { path = "src/lib/net/crates/java" }
 beacon-msmp = { path = "src/lib/net/crates/msmp" }
 beacon-net = { path = "src/lib/net" }
 beacon-rcon = { path = "src/lib/net/crates/rcon" }
+itoa = "1.0.15"

@@ -5,7 +5,9 @@ edition.workspace = true
 
 [dependencies]
 beacon-config.workspace = true
+beacon-java.workspace = true
 beacon-net.workspace = true
 bevy_ecs.workspace = true
 byteorder.workspace = true
+itoa.workspace = true
 rand.workspace = true
