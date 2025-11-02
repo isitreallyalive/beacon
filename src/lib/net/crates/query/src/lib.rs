@@ -1,3 +1,7 @@
+//! UT3 (GameSpot) Query Protocol
+//!
+//! See the page on [minecraft.wiki](https://minecraft.wiki/w/Query) for protocol details.
+
 use std::{
     collections::HashMap,
     io::{self, Cursor},
@@ -15,11 +19,13 @@ use byteorder::{BigEndian, ReadBytesExt};
 extern crate tracing;
 
 mod stat;
+#[cfg(test)]
+mod tests;
 
-/// Magic number that every request starts with
-const MAGIC: u16 = 0xFEFD;
-/// Maximum size of an incoming packet (full stat)
-const BUF_SIZE: usize = 2 + 1 + 4 + 4 + 4;
+/// Magic number that every c2s packet starts with
+const C2S_MAGIC: u16 = 0xFEFD;
+/// Maximum size of an c2s packet (full stat)
+const C2S_MAX: usize = 2 + 1 + 4 + 4 + 4;
 
 // packet ids
 const HANDSHAKE: u8 = 0x09;
@@ -75,14 +81,14 @@ impl QueryListener {
         java_conns: Query<&JavaConnection>,
     ) -> Result<()> {
         if let Some(mut query) = query {
-            let mut buf = [0u8; BUF_SIZE];
+            let mut buf = [0u8; C2S_MAX];
             match query.sock.recv_from(&mut buf) {
                 Ok((size, addr)) => {
                     let mut data = Cursor::new(&buf[..size]);
 
                     // validate magic number
                     match data.read_u16::<BigEndian>() {
-                        Ok(m) if m == MAGIC => m,
+                        Ok(m) if m == C2S_MAGIC => m,
                         _ => return Ok(()),
                     };
 
@@ -98,6 +104,7 @@ impl QueryListener {
                         HANDSHAKE => {
                             debug!(addr = ?addr, "received handshake");
                             // write challenge token
+                            let mut buf = itoa::Buffer::new();
                             let challenge_token = match query.tokens.get(&addr) {
                                 Some(&token) => token,
                                 None => {
@@ -106,7 +113,7 @@ impl QueryListener {
                                     token
                                 }
                             };
-                            write_string(&mut out, &challenge_token.to_string())?;
+                            write_string(&mut out, buf.format(challenge_token))?;
                         }
                         STAT => {
                             // validate token
