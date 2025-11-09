@@ -1,6 +1,6 @@
-use std::io::{self, Cursor};
+use std::io;
 
-use deku::{ctx::Endian, no_std_io, prelude::*};
+use deku::{ctx::Endian, prelude::*};
 
 #[derive(Debug, DekuRead)]
 #[cfg_attr(test, derive(DekuWrite))]
@@ -9,7 +9,11 @@ pub enum QueryRequest {
     #[deku(id = "0x00")]
     Stat(StatRequest),
     #[deku(id = "0x09")]
-    Handshake,
+    Handshake { session_id: i32 },
+}
+
+impl QueryRequest {
+    pub const MAX_SIZE: usize = 15; // magic(2) + id(1) + session(4) + token(4) + padding(4)
 }
 
 #[derive(Debug)]
@@ -20,7 +24,7 @@ pub struct StatRequest {
 }
 
 impl DekuReader<'_, Endian> for StatRequest {
-    fn from_reader_with_ctx<R: no_std_io::Read + io::Seek>(
+    fn from_reader_with_ctx<R: io::Read + io::Seek>(
         reader: &mut Reader<R>,
         ctx: Endian,
     ) -> Result<Self, DekuError> {
@@ -44,14 +48,8 @@ impl DekuWriter<Endian> for StatRequest {
         self.session_id.to_writer(writer, ctx)?;
         self.challenge_token.to_writer(writer, ctx)?;
         if self.full {
-            [0u8; 4].to_writer(writer, ctx)?; // padding
+            [0u8; 4].to_writer(writer, ctx)?;
         }
         Ok(())
     }
-}
-
-impl QueryRequest {
-    /// Maximum size of a c2s packet (full stat)
-    // 2 (magic) + 1 (id) + 4 (session id) + 4 (challenge token) + 4 (padding)
-    pub const MAX_SIZE: usize = 2 + 1 + 4 + 4 + 4;
 }

@@ -1,7 +1,8 @@
-use std::{ffi, io, ops::Deref};
+use std::{ffi, io};
 
 use deku::{ctx::Endian, prelude::*};
 
+/// A C-style null-terminated string.
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct CString(pub ffi::CString);
 
@@ -11,9 +12,8 @@ impl CString {
     }
 }
 
-impl Deref for CString {
+impl std::ops::Deref for CString {
     type Target = ffi::CString;
-
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -25,7 +25,7 @@ impl DekuWriter<Endian> for CString {
         writer: &mut Writer<W>,
         _: Endian,
     ) -> Result<(), DekuError> {
-        <ffi::CString as DekuWriter<()>>::to_writer(&self, writer, ())
+        <ffi::CString as DekuWriter<()>>::to_writer(self, writer, ())
     }
 }
 
@@ -34,10 +34,7 @@ impl DekuReader<'_, Endian> for CString {
     fn from_reader_with_ctx<R: io::Read + io::Seek>(
         reader: &mut Reader<R>,
         _: Endian,
-    ) -> Result<Self, DekuError>
-    where
-        Self: Sized,
-    {
+    ) -> Result<Self, DekuError> {
         <ffi::CString as DekuReader<'_, ()>>::from_reader_with_ctx(reader, ()).map(CString)
     }
 }

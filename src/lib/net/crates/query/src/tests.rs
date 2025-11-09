@@ -13,7 +13,7 @@ use crate::{
     packet::{CString, QueryRequest, QueryResponse, StatRequest, StatResponseKind},
 };
 
-const SESSION_ID: i32 = 0;
+const SESSION_ID: i32 = 0x12345678;
 
 struct TestEnv {
     world: World,
@@ -24,12 +24,10 @@ struct TestEnv {
 }
 
 impl TestEnv {
-    /// Create a new test environment
     fn new() -> io::Result<Self> {
-        // setup bevy
         let (mut world, mut schedule) = (World::new(), Schedule::default());
         let mut config = Config::default();
-        config.query.port = rand::random(); // randomise port to avoid conflicts
+        config.query.port = rand::random();
         world.insert_resource(config.clone());
         QueryListener::register(&mut world, &mut schedule, &config)?;
 
@@ -45,32 +43,43 @@ impl TestEnv {
         })
     }
 
-    /// Receive a packet from the query listener
     fn recv<P: for<'a> DekuContainerRead<'a>>(&mut self) -> io::Result<P> {
-        let mut buf = [0u8; 1024]; // 1024 should be more than enough
+        let mut buf = [0u8; 1024];
         let size = self.client_sock.recv(&mut buf)?;
-        let owned_buf = buf[..size].to_vec();
-        let (_, packet) = P::from_bytes((&owned_buf[..], 0))?;
+        let (_, packet) = P::from_bytes((&buf[..size], 0))?;
         Ok(packet)
     }
 
-    /// Send a packet to the query listener
     fn send<P: DekuContainerWrite>(&mut self, packet: P) -> io::Result<()> {
-        let data = packet.to_bytes()?; // serialize packet
-        self.client_sock.send_to(&data, self.server_addr)?; // send packet to server
-        self.schedule.run(&mut self.world); // process systems
+        let data = packet.to_bytes()?;
+        self.client_sock.send_to(&data, self.server_addr)?;
+        self.schedule.run(&mut self.world);
         Ok(())
     }
 
-    /// Handshake with the query listener. Returns the challenge token.
     fn handshake(&mut self) -> Result<i32> {
-        self.send(QueryRequest::Handshake)?;
+        self.send(QueryRequest::Handshake {
+            session_id: SESSION_ID,
+        })?;
         let response = self.recv::<QueryResponse>()?;
         match response {
-            QueryResponse::Handshake { challenge_token } => {
-                let number: i32 = challenge_token.0.to_string_lossy().parse()?;
-                Ok(number)
-            }
+            QueryResponse::Handshake {
+                challenge_token, ..
+            } => Ok(challenge_token.0.to_string_lossy().parse()?),
+            _ => Err("unexpected response type")?,
+        }
+    }
+
+    fn stat_request(&mut self, full: bool) -> Result<StatResponseKind> {
+        let challenge_token = self.handshake()?;
+        self.send(QueryRequest::Stat(StatRequest {
+            session_id: SESSION_ID,
+            challenge_token,
+            full,
+        }))?;
+        let response = self.recv::<QueryResponse>()?;
+        match response {
+            QueryResponse::Stat(kind) => Ok(kind),
             _ => Err("unexpected response type")?,
         }
     }
@@ -78,74 +87,57 @@ impl TestEnv {
 
 #[test]
 fn test_handshake() -> Result<()> {
-    let mut beacon = TestEnv::new()?;
-    beacon.handshake()?;
+    TestEnv::new()?.handshake()?;
     Ok(())
 }
 
 #[test]
 fn test_basic_stat() -> Result<()> {
-    let mut beacon = TestEnv::new()?;
-    let challenge_token = beacon.handshake()?;
-    beacon.send(QueryRequest::Stat(StatRequest {
-        session_id: SESSION_ID,
-        challenge_token,
-        full: false,
-    }))?;
-    let response = beacon.recv::<QueryResponse>()?;
+    let mut env = TestEnv::new()?;
+    let response = env.stat_request(false)?;
 
     match response {
-        QueryResponse::Stat(StatResponseKind::Basic { basic, .. }) => {
-            assert_eq!(basic.motd.to_string_lossy(), beacon.config.server.motd);
-            assert_eq!(basic.map.to_string_lossy(), beacon.config.world.name);
+        StatResponseKind::Basic { basic, .. } => {
+            assert_eq!(basic.motd.to_string_lossy(), env.config.server.motd);
+            assert_eq!(basic.map.to_string_lossy(), env.config.world.name);
             assert_eq!(basic.num_players.to_string_lossy(), "0");
             assert_eq!(
                 basic.max_players.to_string_lossy(),
-                format!("{}", beacon.config.server.max_players)
+                env.config.server.max_players.to_string()
             );
-            assert_eq!(basic.host_port, beacon.config.server.port);
+            assert_eq!(basic.host_port, env.config.server.port);
             assert_eq!(
                 basic.host_ip.to_string_lossy(),
-                beacon.config.server.ip.to_string()
+                env.config.server.ip.to_string()
             );
         }
-        _ => Err("unexpected response type")?,
+        _ => Err("expected basic stat response")?,
     }
     Ok(())
 }
 
 #[test]
 fn test_full_stat() -> Result<()> {
-    let mut beacon = TestEnv::new()?;
-    let challenge_token = beacon.handshake()?;
-    beacon.send(QueryRequest::Stat(StatRequest {
-        session_id: SESSION_ID,
-        challenge_token,
-        full: true,
-    }))?;
-    let response = beacon.recv::<QueryResponse>()?;
+    let mut env = TestEnv::new()?;
+    let response = env.stat_request(true)?;
 
     match response {
-        QueryResponse::Stat(StatResponseKind::Full { kv, .. }) => {
+        StatResponseKind::Full { kv, .. } => {
             let expected = [
-                ("hostname", beacon.config.server.motd),
-                ("map", beacon.config.world.name),
-                ("numplayers", "0".to_string()),
-                (
-                    "maxplayers",
-                    format!("{}", beacon.config.server.max_players),
-                ),
-                ("hostport", format!("{}", beacon.config.server.port)),
-                ("hostip", beacon.config.server.ip.to_string()),
+                ("hostname", &env.config.server.motd),
+                ("map", &env.config.world.name),
+                ("numplayers", &"0".to_string()),
+                ("maxplayers", &env.config.server.max_players.to_string()),
+                ("hostport", &env.config.server.port.to_string()),
+                ("hostip", &env.config.server.ip.to_string()),
             ];
 
             for (key, value) in expected {
                 let actual = kv.get(&CString::new(key)?).ok_or("missing key in kv")?;
-                assert_eq!(actual.to_string_lossy(), value);
+                assert_eq!(actual.to_string_lossy(), *value);
             }
         }
-        _ => Err("unexpected response type")?,
+        _ => Err("expected full stat response")?,
     }
-
     Ok(())
 }

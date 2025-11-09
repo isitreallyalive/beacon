@@ -5,28 +5,24 @@ use indexmap::IndexMap;
 
 use crate::packet::CString;
 
+/// An ordered, key-value map.
 #[derive(Debug)]
-pub struct KeyValue(IndexMap<CString, CString>);
+pub struct Map(IndexMap<CString, CString>);
 
-impl std::ops::Deref for KeyValue {
+impl std::ops::Deref for Map {
     type Target = IndexMap<CString, CString>;
-
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<const N: usize> From<[(CString, CString); N]> for KeyValue {
+impl<const N: usize> From<[(CString, CString); N]> for Map {
     fn from(kv: [(CString, CString); N]) -> Self {
-        let mut map = IndexMap::new();
-        for (key, value) in kv {
-            map.insert(key.clone(), value.clone());
-        }
-        KeyValue(map)
+        Map(kv.into_iter().collect())
     }
 }
 
-impl DekuWriter<Endian> for KeyValue {
+impl DekuWriter<Endian> for Map {
     fn to_writer<W: io::Write + io::Seek>(
         &self,
         writer: &mut Writer<W>,
@@ -36,13 +32,13 @@ impl DekuWriter<Endian> for KeyValue {
             key.to_writer(writer, ctx)?;
             value.to_writer(writer, ctx)?;
         }
-        0u8.to_writer(writer, ctx)?; // null terminator
+        0u8.to_writer(writer, ctx)?;
         Ok(())
     }
 }
 
 #[cfg(test)]
-impl DekuReader<'_, Endian> for KeyValue {
+impl DekuReader<'_, Endian> for Map {
     fn from_reader_with_ctx<R: io::Read + io::Seek>(
         reader: &mut Reader<R>,
         ctx: Endian,
@@ -56,7 +52,6 @@ impl DekuReader<'_, Endian> for KeyValue {
             let value = CString::from_reader_with_ctx(reader, ctx)?;
             map.insert(key, value);
         }
-
-        Ok(KeyValue(map))
+        Ok(Map(map))
     }
 }

@@ -16,7 +16,7 @@ use bevy_ecs::prelude::*;
 use deku::{DekuContainerRead, DekuContainerWrite};
 
 use crate::{
-    packet::{CString, QueryRequest, QueryResponse, StatRequest, StatResponseKind},
+    packet::{CString, QueryRequest, QueryResponse, StatRequest},
     stats::{GAMETYPE, Stats},
 };
 
@@ -77,7 +77,7 @@ impl QueryListener {
                     // respond
                     let online = java_conns.count() as u32;
                     let response = match packet {
-                        QueryRequest::Handshake => {
+                        QueryRequest::Handshake { session_id } => {
                             let challenge_token = {
                                 let number = match query.tokens.get(&addr) {
                                     Some(&t) => t,
@@ -90,7 +90,10 @@ impl QueryListener {
                                 CString::new(&format!("{}", number))?
                             };
 
-                            QueryResponse::Handshake { challenge_token }
+                            QueryResponse::Handshake {
+                                session_id,
+                                challenge_token,
+                            }
                         }
                         QueryRequest::Stat(StatRequest {
                             session_id,
@@ -99,6 +102,8 @@ impl QueryListener {
                         }) => {
                             // validate challenge token
                             if query.tokens.get(&addr) != Some(&challenge_token) {
+                                println!("{:?}", query.tokens.get(&addr));
+                                println!("{:?}", challenge_token);
                                 warn!("invalid challenge token from {}", addr);
                                 return Ok(());
                             }
@@ -118,10 +123,10 @@ impl QueryListener {
                             };
 
                             QueryResponse::Stat(if full {
-                                stats.full(session_id)
+                                stats.full(session_id)?
                             } else {
                                 stats.basic(session_id)
-                            }?)
+                            })
                         }
                     };
 

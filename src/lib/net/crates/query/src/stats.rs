@@ -23,11 +23,11 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub const fn basic(self, session_id: i32) -> io::Result<StatResponseKind> {
-        Ok(StatResponseKind::Basic {
+    pub fn basic(self, session_id: i32) -> StatResponseKind {
+        StatResponseKind::Basic {
             session_id,
             basic: self,
-        })
+        }
     }
 
     pub fn full(self, session_id: i32) -> io::Result<StatResponseKind> {
@@ -44,7 +44,7 @@ impl Stats {
                 (CString::new("maxplayers")?, self.max_players),
                 (
                     CString::new("hostport")?,
-                    CString::new(&format!("{}", self.host_port))?,
+                    CString::new(&self.host_port.to_string())?,
                 ),
                 (CString::new("hostip")?, self.host_ip),
             ]
