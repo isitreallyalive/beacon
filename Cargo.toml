@@ -19,10 +19,9 @@ thiserror = "2.0.17"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.20"
 beacon-query = { path = "src/lib/net/crates/query" }
-byteorder = "1.5.0"
 rand = "0.9.2"
 beacon-java = { path = "src/lib/net/crates/java" }
 beacon-msmp = { path = "src/lib/net/crates/msmp" }
 beacon-net = { path = "src/lib/net" }
 beacon-rcon = { path = "src/lib/net/crates/rcon" }
-itoa = "1.0.15"
+deku = "0.20.0"

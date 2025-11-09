@@ -4,7 +4,7 @@
 
 use std::{
     collections::HashMap,
-    io::{self, Cursor},
+    io,
     net::{SocketAddr, UdpSocket},
     time::{Duration, Instant},
 };
@@ -13,23 +13,16 @@ use beacon_config::Config;
 use beacon_java::JavaConnection;
 use beacon_net::{Listener, update_listener};
 use bevy_ecs::prelude::*;
-use byteorder::{BigEndian, ReadBytesExt};
+use deku::{DekuContainerRead, DekuContainerWrite};
+
+use crate::packet::{CString, QueryRequest, QueryResponse};
 
 #[macro_use]
 extern crate tracing;
 
-mod stat;
+mod packet;
 #[cfg(test)]
 mod tests;
-
-/// Magic number that every c2s packet starts with
-const C2S_MAGIC: u16 = 0xFEFD;
-/// Maximum size of an c2s packet (full stat)
-const C2S_MAX: usize = 2 + 1 + 4 + 4 + 4;
-
-// packet ids
-const HANDSHAKE: u8 = 0x09;
-const STAT: u8 = 0x00;
 
 /// Token clearing interval
 const CLEAR_INTERVAL: Duration = Duration::from_secs(30);
@@ -63,17 +56,6 @@ impl Listener for QueryListener {
     update_listener!(QueryListener: query);
 }
 
-pub(crate) fn write_null<W: io::Write>(writer: &mut W) -> io::Result<()> {
-    writer.write_all(&[0])?;
-    Ok(())
-}
-
-pub(crate) fn write_string<W: io::Write>(writer: &mut W, s: &str) -> io::Result<()> {
-    writer.write_all(s.as_bytes())?;
-    write_null(writer)?;
-    Ok(())
-}
-
 impl QueryListener {
     fn recv(
         query: Option<ResMut<QueryListener>>,
@@ -81,69 +63,35 @@ impl QueryListener {
         java_conns: Query<&JavaConnection>,
     ) -> Result<()> {
         if let Some(mut query) = query {
-            let mut buf = [0u8; C2S_MAX];
+            let mut buf = [0u8; QueryRequest::MAX_SIZE];
             match query.sock.recv_from(&mut buf) {
                 Ok((size, addr)) => {
-                    let mut data = Cursor::new(&buf[..size]);
+                    // deserialize packet
+                    let data = &buf[..size];
+                    let (_, packet) = QueryRequest::from_bytes((data, 0))?;
 
-                    // validate magic number
-                    match data.read_u16::<BigEndian>() {
-                        Ok(m) if m == C2S_MAGIC => m,
-                        _ => return Ok(()),
+                    // respond
+                    let reponse = match packet {
+                        QueryRequest::Handshake => {
+                            let token = {
+                                let number = match query.tokens.get(&addr) {
+                                    Some(&t) => t,
+                                    None => {
+                                        let t = rand::random::<i32>();
+                                        query.tokens.insert(addr, t);
+                                        t
+                                    }
+                                };
+                                CString::new(&format!("{}", number))?
+                            };
+
+                            QueryResponse::Handshake { token }
+                        }
+                        _ => unimplemented!(),
                     };
 
-                    // packet header
-                    let packet_type = data.read_u8()?;
-                    let session_id = data.read_i32::<BigEndian>()?;
-
-                    // prepare respons
-                    let mut out = vec![packet_type];
-                    out.extend(&session_id.to_be_bytes());
-
-                    match packet_type {
-                        HANDSHAKE => {
-                            debug!(addr = ?addr, "received handshake");
-                            // write challenge token
-                            let mut buf = itoa::Buffer::new();
-                            let challenge_token = match query.tokens.get(&addr) {
-                                Some(&token) => token,
-                                None => {
-                                    let token: i32 = rand::random::<i32>();
-                                    query.tokens.insert(addr, token);
-                                    token
-                                }
-                            };
-                            write_string(&mut out, buf.format(challenge_token))?;
-                        }
-                        STAT => {
-                            // validate token
-                            let challenge_token = data.read_i32::<BigEndian>()?;
-                            if query.tokens.get(&addr) != Some(&challenge_token) {
-                                return Ok(());
-                            }
-                            // build stats
-                            let stats = stat::StatsResponse {
-                                motd: &config.server.motd,
-                                map: &config.world.name,
-                                numplayers: &java_conns.iter().count().to_string(),
-                                maxplayers: &config.server.max_players.to_string(),
-                                hostport: &config.server.port.to_string(),
-                                hostip: &config.server.ip.to_string(),
-                            };
-                            // is the payload exactly 4 bytes (challenge token)?
-                            let remaining = size.saturating_sub(data.position() as usize);
-                            if remaining == 4 {
-                                debug!(addr = ?addr, "received full stat");
-                                stats.full(&mut out)?;
-                            } else {
-                                debug!(addr = ?addr, "received basic stat");
-                                stats.basic(&mut out)?;
-                            }
-                        }
-                        _ => return Ok(()),
-                    }
-
-                    query.sock.send_to(&out, addr)?;
+                    let data = reponse.to_bytes()?;
+                    query.sock.send_to(&data, addr)?;
                 }
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                     // no data available, non-blocking
