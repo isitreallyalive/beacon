@@ -41,6 +41,8 @@ pub struct QueryListener {
 }
 
 impl Listener for QueryListener {
+    const NAME: &str = "Query";
+
     fn register(world: &mut World, schedule: &mut Schedule, config: &Config) -> io::Result<()> {
         world.insert_resource(Self::new(config)?);
         schedule.add_systems((Self::update, Self::recv, Self::clear_tokens));
@@ -57,7 +59,11 @@ impl Listener for QueryListener {
         })
     }
 
-    update_listener!(QueryListener: query);
+    update_listener!(query);
+
+    fn accept(_listener: Option<Res<Self>>, _commands: Commands) {
+        unimplemented!() // UDP listener does not accept connections
+    }
 }
 
 impl QueryListener {

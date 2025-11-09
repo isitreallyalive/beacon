@@ -5,19 +5,12 @@ use bevy_ecs::prelude::*;
 
 #[derive(Component)]
 pub struct RconConnection {
-    conn: TcpStream,
-    addr: SocketAddr,
+    pub(crate) conn: TcpStream,
+    pub(crate) addr: SocketAddr,
 }
 
 impl Connection for RconConnection {
-    const SERVICE_NAME: &'static str = "RCON";
-    type Listener = crate::RconListener;
-
-    fn new(conn: TcpStream, addr: SocketAddr) -> Self {
-        Self { conn, addr }
-    }
-
-    fn handle(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
+    fn process(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
         for (entity, conn) in connections.iter_mut() {}
     }
 }

@@ -5,19 +5,12 @@ use bevy_ecs::prelude::*;
 
 #[derive(Component)]
 pub struct JavaConnection {
-    conn: TcpStream,
-    addr: SocketAddr,
+    pub(crate) conn: TcpStream,
+    pub(crate) addr: SocketAddr,
 }
 
 impl Connection for JavaConnection {
-    const SERVICE_NAME: &'static str = "Server";
-    type Listener = crate::JavaListener;
-
-    fn new(conn: TcpStream, addr: SocketAddr) -> Self {
-        Self { conn, addr }
-    }
-
-    fn handle(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
+    fn process(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
         for (entity, conn) in connections.iter_mut() {}
     }
 }

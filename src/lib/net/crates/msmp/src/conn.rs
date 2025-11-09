@@ -10,14 +10,7 @@ pub struct MsmpConnection {
 }
 
 impl Connection for MsmpConnection {
-    const SERVICE_NAME: &'static str = "MSMP";
-    type Listener = crate::MsmpListener;
-
-    fn new(conn: TcpStream, addr: SocketAddr) -> Self {
-        Self { conn, addr }
-    }
-
-    fn handle(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
+    fn process(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
         for (entity, conn) in connections.iter_mut() {}
     }
 }

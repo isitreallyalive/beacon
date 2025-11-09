@@ -1,7 +1,7 @@
 use std::net::TcpListener;
 
 use beacon_config::Config;
-use beacon_net::{Listener, update_listener};
+use beacon_net::{Listener, accept_tcp, update_listener};
 use bevy_ecs::prelude::*;
 
 #[macro_use]
@@ -14,13 +14,16 @@ pub use conn::RconConnection;
 pub struct RconListener(TcpListener);
 
 impl Listener for RconListener {
+    const NAME: &str = "RCON";
+
     fn new(config: &Config) -> std::io::Result<Self> {
         let listener = <TcpListener>::bind((config.rcon.ip, config.rcon.port))?;
         listener.set_nonblocking(true)?;
         Ok(RconListener(listener))
     }
 
-    update_listener!(RconListener: rcon);
+    accept_tcp!(RconConnection);
+    update_listener!(rcon);
 }
 
 impl std::ops::Deref for RconListener {

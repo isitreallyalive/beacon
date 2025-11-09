@@ -1,7 +1,7 @@
 use std::net::TcpListener;
 
 use beacon_config::Config;
-use beacon_net::{Listener, update_listener};
+use beacon_net::{Listener, accept_tcp, update_listener};
 use bevy_ecs::prelude::*;
 
 #[macro_use]
@@ -14,13 +14,16 @@ pub use conn::JavaConnection;
 pub struct JavaListener(TcpListener);
 
 impl Listener for JavaListener {
+    const NAME: &str = "Server";
+
     fn new(config: &Config) -> std::io::Result<Self> {
         let listener = <TcpListener>::bind((config.server.ip, config.server.port))?;
         listener.set_nonblocking(true)?;
         Ok(JavaListener(listener))
     }
 
-    update_listener!(JavaListener: server);
+    update_listener!(server);
+    accept_tcp!(JavaConnection);
 }
 
 impl std::ops::Deref for JavaListener {
