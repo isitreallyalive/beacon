@@ -10,8 +10,14 @@ pub struct JavaConnection {
 }
 
 impl Connection for JavaConnection {
-    fn process(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
-        for (entity, conn) in connections.iter_mut() {}
+    type Listener = super::JavaListener;
+
+    fn process(
+        _connections: Query<(Entity, &mut Self)>,
+        _listener: Option<Res<Self::Listener>>,
+        _commands: Commands,
+    ) -> Result<()> {
+        Ok(())
     }
 }
 

@@ -4,8 +4,6 @@ use beacon_config::Config;
 use bevy_ecs::prelude::*;
 
 pub trait Listener: Deref + Resource + Sized {
-    const NAME: &str;
-
     /// Register the listener as a resource and relevant systems to schedule.
     fn register(world: &mut World, schedule: &mut Schedule, config: &Config) -> io::Result<()> {
         world.insert_resource(Self::new(config)?);
@@ -24,7 +22,7 @@ pub trait Listener: Deref + Resource + Sized {
     ) -> Result<()>;
 
     /// Accept new connections.
-    fn accept(listener: Option<Res<Self>>, commands: Commands);
+    fn accept(listener: Option<Res<Self>>, commands: Commands) -> Result<()>;
 }
 
 #[macro_export]
@@ -61,24 +59,33 @@ macro_rules! update_listener {
 #[macro_export]
 macro_rules! accept_tcp {
     ($conn:ident) => {
-        fn accept(listener: Option<Res<Self>>, mut commands: Commands) {
+        accept_tcp!(|conn, addr, commands| {
+            commands.spawn($conn {
+                conn,
+                addr
+            });
+        });
+    };
+    (|$conn:ident, $addr:ident, $commands:ident| $handler:block) => {
+        fn accept(listener: Option<Res<Self>>, mut $commands: Commands) -> Result<()> {
             if let Some(listener) = listener {
                 match listener.accept() {
-                    Ok((conn, addr)) => {
-                        info!(service = Self::NAME, addr = ?addr, "accepted connection");
-                        commands.spawn($conn {
-                            conn,
-                            addr
-                        });
+                    Ok(($conn, $addr)) => {
+                        info!(addr = ?$addr, "accepted connection");
+                        $handler
                     }
                     Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                         // no incoming connection, non-blocking
                     }
                     Err(e) => {
-                        error!(service = Self::NAME, error = %e, "failed to accept connection");
+                        error!(error = %e, "error accepting connection");
                     }
                 }
             }
+            Ok(())
         }
     };
+    (@) => {
+
+    }
 }

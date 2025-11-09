@@ -7,4 +7,7 @@ edition.workspace = true
 beacon-config.workspace = true
 beacon-net.workspace = true
 bevy_ecs.workspace = true
+jsonrpc-core.workspace = true
+serde_json.workspace = true
 tracing.workspace = true
+tungstenite.workspace = true

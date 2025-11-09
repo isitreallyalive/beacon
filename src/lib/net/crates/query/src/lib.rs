@@ -41,8 +41,6 @@ pub struct QueryListener {
 }
 
 impl Listener for QueryListener {
-    const NAME: &str = "Query";
-
     fn register(world: &mut World, schedule: &mut Schedule, config: &Config) -> io::Result<()> {
         world.insert_resource(Self::new(config)?);
         schedule.add_systems((Self::update, Self::recv, Self::clear_tokens));
@@ -61,7 +59,7 @@ impl Listener for QueryListener {
 
     update_listener!(query);
 
-    fn accept(_listener: Option<Res<Self>>, _commands: Commands) {
+    fn accept(_listener: Option<Res<Self>>, _commands: Commands) -> Result<()> {
         unimplemented!() // UDP listener does not accept connections
     }
 }
@@ -143,7 +141,7 @@ impl QueryListener {
                     // no data available, non-blocking
                 }
                 Err(e) => {
-                    error!("error receiving query packet: {}", e);
+                    error!(error = %e, "error receiving query packet");
                 }
             }
         }
@@ -153,7 +151,7 @@ impl QueryListener {
     fn clear_tokens(query: Option<ResMut<QueryListener>>) {
         if let Some(mut query) = query {
             let now = Instant::now();
-            if now.duration_since(query.last_clear) >= CLEAR_INTERVAL {
+            if now.duration_since(query.last_clear) >= CLEAR_INTERVAL && !query.tokens.is_empty() {
                 debug!(size = query.tokens.len(), "clearing query challenge tokens");
                 query.tokens.clear();
                 query.last_clear = now;

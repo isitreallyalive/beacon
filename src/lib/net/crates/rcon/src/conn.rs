@@ -10,8 +10,14 @@ pub struct RconConnection {
 }
 
 impl Connection for RconConnection {
-    fn process(mut connections: Query<(Entity, &mut Self)>, commands: Commands) {
-        for (entity, conn) in connections.iter_mut() {}
+    type Listener = super::RconListener;
+
+    fn process(
+        _connections: Query<(Entity, &mut Self)>,
+        _listener: Option<Res<Self::Listener>>,
+        _commands: Commands,
+    ) -> Result<()> {
+        Ok(())
     }
 }
 

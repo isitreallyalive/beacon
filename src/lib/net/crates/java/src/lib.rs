@@ -14,8 +14,6 @@ pub use conn::JavaConnection;
 pub struct JavaListener(TcpListener);
 
 impl Listener for JavaListener {
-    const NAME: &str = "Server";
-
     fn new(config: &Config) -> std::io::Result<Self> {
         let listener = <TcpListener>::bind((config.server.ip, config.server.port))?;
         listener.set_nonblocking(true)?;

@@ -14,8 +14,6 @@ pub use conn::RconConnection;
 pub struct RconListener(TcpListener);
 
 impl Listener for RconListener {
-    const NAME: &str = "RCON";
-
     fn new(config: &Config) -> std::io::Result<Self> {
         let listener = <TcpListener>::bind((config.rcon.ip, config.rcon.port))?;
         listener.set_nonblocking(true)?;
