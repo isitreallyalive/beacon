@@ -15,12 +15,16 @@ use beacon_net::{Listener, update_listener};
 use bevy_ecs::prelude::*;
 use deku::{DekuContainerRead, DekuContainerWrite};
 
-use crate::packet::{CString, QueryRequest, QueryResponse};
+use crate::{
+    packet::{CString, QueryRequest, QueryResponse, StatRequest, StatResponseKind},
+    stats::{GAMETYPE, Stats},
+};
 
 #[macro_use]
 extern crate tracing;
 
 mod packet;
+mod stats;
 #[cfg(test)]
 mod tests;
 
@@ -71,9 +75,10 @@ impl QueryListener {
                     let (_, packet) = QueryRequest::from_bytes((data, 0))?;
 
                     // respond
-                    let reponse = match packet {
+                    let online = java_conns.count() as u32;
+                    let response = match packet {
                         QueryRequest::Handshake => {
-                            let token = {
+                            let challenge_token = {
                                 let number = match query.tokens.get(&addr) {
                                     Some(&t) => t,
                                     None => {
@@ -85,12 +90,42 @@ impl QueryListener {
                                 CString::new(&format!("{}", number))?
                             };
 
-                            QueryResponse::Handshake { token }
+                            QueryResponse::Handshake { challenge_token }
                         }
-                        _ => unimplemented!(),
+                        QueryRequest::Stat(StatRequest {
+                            session_id,
+                            challenge_token,
+                            full,
+                        }) => {
+                            // validate challenge token
+                            if query.tokens.get(&addr) != Some(&challenge_token) {
+                                warn!("invalid challenge token from {}", addr);
+                                return Ok(());
+                            }
+
+                            // collate stats
+                            let stats = Stats {
+                                motd: CString::new(&config.server.motd)?,
+                                gametype: GAMETYPE.clone(),
+                                map: CString::new(&config.world.name)?,
+                                num_players: CString::new(&format!("{}", online))?,
+                                max_players: CString::new(&format!(
+                                    "{}",
+                                    config.server.max_players
+                                ))?,
+                                host_port: config.server.port,
+                                host_ip: CString::new(&config.server.ip.to_string())?,
+                            };
+
+                            QueryResponse::Stat(if full {
+                                stats.full(session_id)
+                            } else {
+                                stats.basic(session_id)
+                            }?)
+                        }
                     };
 
-                    let data = reponse.to_bytes()?;
+                    let data = response.to_bytes()?;
                     query.sock.send_to(&data, addr)?;
                 }
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {

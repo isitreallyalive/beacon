@@ -131,6 +131,7 @@ dependencies = [
  "beacon-net",
  "bevy_ecs",
  "deku",
+ "indexmap",
  "rand",
  "tracing",
 ]

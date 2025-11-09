@@ -10,8 +10,10 @@ use deku::{DekuContainerRead, DekuContainerWrite};
 
 use crate::{
     QueryListener,
-    packet::{QueryRequest, QueryResponse},
+    packet::{CString, QueryRequest, QueryResponse, StatRequest, StatResponseKind},
 };
+
+const SESSION_ID: i32 = 0;
 
 struct TestEnv {
     world: World,
@@ -65,8 +67,8 @@ impl TestEnv {
         self.send(QueryRequest::Handshake)?;
         let response = self.recv::<QueryResponse>()?;
         match response {
-            QueryResponse::Handshake { token } => {
-                let number: i32 = token.0.to_string_lossy().parse()?;
+            QueryResponse::Handshake { challenge_token } => {
+                let number: i32 = challenge_token.0.to_string_lossy().parse()?;
                 Ok(number)
             }
             _ => Err("unexpected response type")?,
@@ -84,13 +86,66 @@ fn test_handshake() -> Result<()> {
 #[test]
 fn test_basic_stat() -> Result<()> {
     let mut beacon = TestEnv::new()?;
-    beacon.send(QueryRequest::BasicStat)?;
+    let challenge_token = beacon.handshake()?;
+    beacon.send(QueryRequest::Stat(StatRequest {
+        session_id: SESSION_ID,
+        challenge_token,
+        full: false,
+    }))?;
+    let response = beacon.recv::<QueryResponse>()?;
+
+    match response {
+        QueryResponse::Stat(StatResponseKind::Basic { basic, .. }) => {
+            assert_eq!(basic.motd.to_string_lossy(), beacon.config.server.motd);
+            assert_eq!(basic.map.to_string_lossy(), beacon.config.world.name);
+            assert_eq!(basic.num_players.to_string_lossy(), "0");
+            assert_eq!(
+                basic.max_players.to_string_lossy(),
+                format!("{}", beacon.config.server.max_players)
+            );
+            assert_eq!(basic.host_port, beacon.config.server.port);
+            assert_eq!(
+                basic.host_ip.to_string_lossy(),
+                beacon.config.server.ip.to_string()
+            );
+        }
+        _ => Err("unexpected response type")?,
+    }
     Ok(())
 }
 
 #[test]
 fn test_full_stat() -> Result<()> {
     let mut beacon = TestEnv::new()?;
-    beacon.send(QueryRequest::FullStat)?;
+    let challenge_token = beacon.handshake()?;
+    beacon.send(QueryRequest::Stat(StatRequest {
+        session_id: SESSION_ID,
+        challenge_token,
+        full: true,
+    }))?;
+    let response = beacon.recv::<QueryResponse>()?;
+
+    match response {
+        QueryResponse::Stat(StatResponseKind::Full { kv, .. }) => {
+            let expected = [
+                ("hostname", beacon.config.server.motd),
+                ("map", beacon.config.world.name),
+                ("numplayers", "0".to_string()),
+                (
+                    "maxplayers",
+                    format!("{}", beacon.config.server.max_players),
+                ),
+                ("hostport", format!("{}", beacon.config.server.port)),
+                ("hostip", beacon.config.server.ip.to_string()),
+            ];
+
+            for (key, value) in expected {
+                let actual = kv.get(&CString::new(key)?).ok_or("missing key in kv")?;
+                assert_eq!(actual.to_string_lossy(), value);
+            }
+        }
+        _ => Err("unexpected response type")?,
+    }
+
     Ok(())
 }

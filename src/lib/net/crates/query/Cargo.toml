@@ -9,5 +9,6 @@ beacon-java.workspace = true
 beacon-net.workspace = true
 bevy_ecs.workspace = true
 deku.workspace = true
+indexmap.workspace = true
 rand.workspace = true
 tracing.workspace = true
