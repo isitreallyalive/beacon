@@ -3,13 +3,15 @@ use std::net::TcpListener;
 use beacon_config::Config;
 use beacon_net::{Listener, accept_tcp, update_listener};
 use bevy_ecs::prelude::*;
+use jsonrpc_core::IoHandler;
+
+pub use crate::conn::MsmpConnection;
 
 #[macro_use]
 extern crate tracing;
 
 mod conn;
-pub use conn::MsmpConnection;
-use jsonrpc_core::IoHandler;
+mod rpc;
 
 #[derive(Resource)]
 pub struct MsmpListener {
@@ -22,7 +24,10 @@ impl Listener for MsmpListener {
         let listener = <TcpListener>::bind((config.msmp.ip, config.msmp.port))?;
         listener.set_nonblocking(true)?;
 
-        let io = IoHandler::new();
+        let mut io = IoHandler::new();
+        for method in inventory::iter::<rpc::RpcMethod> {
+            method.add(&mut io);
+        }
 
         Ok(MsmpListener { listener, io })
     }

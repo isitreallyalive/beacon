@@ -1,0 +1,1 @@
+`json-rpc-api-schema.json` is sourced from the Java Edition [data generator](https://minecraft.wiki/w/Tutorial:Running_the_data_generator).
