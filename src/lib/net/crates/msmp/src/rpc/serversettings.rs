@@ -2,6 +2,28 @@
 //!
 //! https://minecraft.wiki/w/Minecraft_Server_Management_Protocol#Server_Settings
 
+// todo: implement server settings
+// - autosave
+// - difficulty
+// - enforce_allowlist
+// - use_allowlist
+// - max_players
+// - pause_when_empty_seconds
+// - player_idle_timeout
+// - allow_flight
+// - motd
+// - spawn_protection_radius
+// - force_game_mode
+// - game_mode
+// - view_distance
+// - simulation_distance
+// - accept_transfers
+// - status_heartbeat_interval
+// - operator_user_permission_level
+// - hide_online_players
+// - status_replies
+// - entity_broadcast_range
+
 macro_rules! setting {
     ($name:expr) => {
         $crate::method!(concat!("serversettings/", $name));

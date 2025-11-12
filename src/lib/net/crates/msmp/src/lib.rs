@@ -8,10 +8,13 @@ use jsonrpc_core::IoHandler;
 pub use crate::conn::MsmpConnection;
 
 #[macro_use]
+extern crate serde;
+#[macro_use]
 extern crate tracing;
 
 mod conn;
-mod method;
+mod rpc;
+mod schema;
 
 #[derive(Resource)]
 pub struct MsmpListener {
@@ -25,8 +28,8 @@ impl Listener for MsmpListener {
         listener.set_nonblocking(true)?;
 
         let mut io = IoHandler::new();
-        io.add_sync_method("rpc.discover", method::discover);
-        for method in inventory::iter::<method::RpcMethod> {
+        io.add_sync_method("rpc.discover", rpc::discover);
+        for method in inventory::iter::<rpc::RpcMethod> {
             method.add(&mut io);
         }
 

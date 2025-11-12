@@ -112,6 +112,7 @@ dependencies = [
  "bevy_ecs",
  "inventory",
  "jsonrpc-core",
+ "serde",
  "serde_json",
  "thiserror",
  "tracing",

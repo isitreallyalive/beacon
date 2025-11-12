@@ -1,3 +1,6 @@
+use jsonrpc_core::{ErrorCode, Params, Value};
+pub use openrpc::discover;
+
 mod allowlist;
 mod bans;
 mod gamerules;
@@ -8,15 +11,23 @@ mod players;
 mod server;
 mod serversettings;
 
-use jsonrpc_core::{ErrorCode, Params, Value};
-pub use openrpc::discover;
-
 #[derive(Debug, thiserror::Error)]
 pub enum RpcError {
     #[error("JSON-RPC error: {0}")]
     Rpc(#[from] jsonrpc_core::Error),
     #[error("Serialization error: {0}")]
     Serde(#[from] serde_json::Error),
+}
+
+#[derive(Serialize)]
+pub enum RpcNotification {
+    Server(server::ServerNotification),
+    Players(players::PlayerNotification),
+    Operators(operators::OperatorNotification),
+    Allowlist(allowlist::AllowlistNotification),
+    IPBans(ip_bans::IPBanNotification),
+    Bans(bans::BanNotification),
+    Gamerules(gamerules::GameruleNotification),
 }
 
 pub struct RpcMethod {
@@ -59,9 +70,9 @@ inventory::collect!(RpcMethod);
 #[macro_export]
 macro_rules! method {
     ($name:expr, $handler:expr) => {
-        inventory::submit! { $crate::method::RpcMethod::new($name, $handler) }
+        inventory::submit! { $crate::rpc::RpcMethod::new($name, $handler) }
     };
     ($name:expr) => {
-        $crate::method!($name, $crate::method::RpcMethod::unimplemented);
+        $crate::method!($name, $crate::rpc::RpcMethod::unimplemented);
     };
 }

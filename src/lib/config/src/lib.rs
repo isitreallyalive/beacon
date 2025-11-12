@@ -8,8 +8,10 @@ extern crate tracing;
 
 mod watcher;
 
-/// Version of Minecraft that This server is compatible with
+/// Version of Minecraft that this server is compatible with
 pub const VERSION: &str = "1.21.10";
+/// Protocol version of Minecraft that this server is compatible with
+pub const PROTOCOL_VERSION: u32 = 773;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
