@@ -11,7 +11,7 @@ pub use crate::conn::MsmpConnection;
 extern crate tracing;
 
 mod conn;
-mod rpc;
+mod method;
 
 #[derive(Resource)]
 pub struct MsmpListener {
@@ -25,7 +25,8 @@ impl Listener for MsmpListener {
         listener.set_nonblocking(true)?;
 
         let mut io = IoHandler::new();
-        for method in inventory::iter::<rpc::RpcMethod> {
+        io.add_sync_method("rpc.discover", method::discover);
+        for method in inventory::iter::<method::RpcMethod> {
             method.add(&mut io);
         }
 

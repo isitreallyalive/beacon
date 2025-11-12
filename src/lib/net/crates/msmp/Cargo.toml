@@ -10,5 +10,6 @@ bevy_ecs.workspace = true
 inventory.workspace = true
 jsonrpc-core.workspace = true
 serde_json.workspace = true
+thiserror.workspace = true
 tracing.workspace = true
 tungstenite.workspace = true

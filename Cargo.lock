@@ -113,6 +113,7 @@ dependencies = [
  "inventory",
  "jsonrpc-core",
  "serde_json",
+ "thiserror",
  "tracing",
  "tungstenite",
 ]
