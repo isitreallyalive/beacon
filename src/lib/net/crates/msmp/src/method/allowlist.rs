@@ -1,7 +1,11 @@
-use crate::method::RpcMethod;
+//! Endpoints are accessible at `minecraft:allowlist`
+//!
+//! https://minecraft.wiki/w/Minecraft_Server_Management_Protocol#Allowlist
 
-inventory::submit! { RpcMethod::new("allowlist", None) }
-inventory::submit! { RpcMethod::new("allowlist/set", None) }
-inventory::submit! { RpcMethod::new("allowlist/add", None) }
-inventory::submit! {RpcMethod::new("allowlist/remove", None)}
-inventory::submit! { RpcMethod::new("allowlist/clear", None) }
+use crate::method;
+
+method!("allowlist");
+method!("allowlist/set");
+method!("allowlist/add");
+method!("allowlist/remove");
+method!("allowlist/clear");
