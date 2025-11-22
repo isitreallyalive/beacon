@@ -34,6 +34,6 @@ async fn main() -> io::Result<()> {
 
     let server = Beacon::new().await?;
     server.start().await;
-    
+
     Ok(())
 }

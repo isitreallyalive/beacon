@@ -4,3 +4,6 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+deku = "0.20.0"
+tokio = { workspace = true, features = ["net"] }
+tracing.workspace = true
