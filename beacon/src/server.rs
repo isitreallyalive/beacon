@@ -13,12 +13,12 @@ impl Beacon {
         Ok(Self { query })
     }
 
-    pub async fn start(self) {
+    pub async fn start(mut self) {
         loop {
             tokio::select! {
                 res = self.query.tick() => {
                     if let Err(err) = res {
-                        error!("{:?}", err);
+                        println!("{:?}", err);
                     }
                 }
             }
