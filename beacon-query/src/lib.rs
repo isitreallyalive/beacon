@@ -2,7 +2,7 @@
 //!
 //! See: https://minecraft.wiki/w/Query
 
-use std::{collections::HashMap, ffi::CString, io, net::SocketAddr};
+use std::{collections::HashMap, ffi::CString, io, net::SocketAddr, time::{Duration, Instant}};
 
 use deku::{DekuContainerRead, DekuContainerWrite};
 use tokio::net::UdpSocket;
@@ -17,9 +17,14 @@ mod res;
 #[cfg(test)]
 mod tests;
 
+const CLEAR_INTERVAL: Duration = Duration::from_secs(30);
+
 pub struct QueryHandler {
     sock: UdpSocket,
+    /// Challenge tokens mapped by client address.
     tokens: HashMap<SocketAddr, i32>,
+    /// Last time tokens were cleared.
+    last_cleared: Instant,
 }
 
 impl QueryHandler {
@@ -27,11 +32,18 @@ impl QueryHandler {
         Ok(Self {
             sock: UdpSocket::bind("0.0.0.0:25565").await?,
             tokens: HashMap::new(),
+            last_cleared: Instant::now(),
         })
     }
 
     pub async fn tick(&mut self) -> io::Result<()> {
-        // todo: clear tokens
+        // clear tokens periodically
+        let elapsed = self.last_cleared.elapsed();
+        if elapsed >= CLEAR_INTERVAL && !self.tokens.is_empty() {
+            self.tokens.clear();
+            self.last_cleared = Instant::now();
+            debug!("clearing challenge tokens");
+        }
 
         // read a packet
         let mut buf = [0u8; req::MAX_SIZE];
