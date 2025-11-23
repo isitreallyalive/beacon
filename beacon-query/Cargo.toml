@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 beacon-config.workspace = true
 beacon-data.workspace = true
+beacon-util.workspace = true
 deku.workspace = true
 indexmap.workspace = true
 rand.workspace = true

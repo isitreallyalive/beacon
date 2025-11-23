@@ -1,8 +1,9 @@
-use std::{fs, ops::Deref, path::PathBuf, rc::Rc};
+use std::{fs, io, ops::Deref, path::PathBuf, sync::Arc};
 
+use beacon_util::{Tickable, async_trait};
 use notify::Watcher;
 use serde::Deserialize;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::{Mutex, broadcast, mpsc};
 
 pub use crate::def::ConfigData;
 use crate::def::*;
@@ -14,8 +15,11 @@ mod def;
 
 #[derive(Debug, Default)]
 pub struct Config {
-    pub data: Rc<Mutex<ConfigData>>,
+    /// The actual configuration data
+    pub data: Arc<Mutex<ConfigData>>,
+    /// File watcher for config changes
     watcher: Option<ConfigWatcher>,
+    /// Path to the configuration file
     path: PathBuf,
 }
 
@@ -29,8 +33,11 @@ impl Deref for Config {
 
 #[derive(Debug)]
 struct ConfigWatcher {
+    /// The actual file watcher
     _inner: notify::RecommendedWatcher,
+    /// Receiver for file change events
     rx: mpsc::Receiver<notify::Event>,
+    tx: broadcast::Sender<()>,
 }
 
 impl Deref for ConfigWatcher {
@@ -42,13 +49,16 @@ impl Deref for ConfigWatcher {
 }
 
 macro_rules! reload {
-    ($config:expr, $value:expr, $log:expr, $field:ident, $struct:ty) => {
+    ($config:expr, $watcher:expr, $value:expr, $log:expr, $announced:expr, $field:ident, $struct:ty) => {
         if let Some(value) = $value.get(stringify!($field)) {
             match <$struct>::deserialize(value.clone()) {
                 Ok($field) => {
                     if $config.$field == $field {
                         // no changes
                         return;
+                    } else if !*$announced {
+                        let _ = $watcher.as_ref().map(|w| w.tx.send(()));
+                        *$announced = true;
                     }
 
                     $config.$field = $field;
@@ -68,39 +78,9 @@ macro_rules! reload {
     };
 }
 
-impl Config {
-    /// Read configuration from a file
-    pub async fn read(path: PathBuf) -> Self {
-        // attempt to create a file watcher
-        let (tx, rx) = mpsc::channel(1);
-        let watcher = notify::recommended_watcher(move |res| {
-            if let Ok(event) = res {
-                let _ = tx.blocking_send(event);
-            }
-        })
-        .and_then(|mut watcher| {
-            watcher.watch(&path, notify::RecursiveMode::NonRecursive)?;
-            Ok(watcher)
-        })
-        .map(|inner| ConfigWatcher { _inner: inner, rx })
-        .ok();
-
-        if let None = watcher {
-            warn!("file watcher could not be created. config changes will not be detected.");
-        }
-
-        let mut config = Self {
-            data: Rc::new(Mutex::new(ConfigData::default())),
-            watcher,
-            path,
-        };
-        config.reload(false).await;
-
-        config
-    }
-
-    pub async fn tick(&mut self) {
-        // handle file change events
+#[async_trait]
+impl Tickable for Config {
+    async fn tick(&mut self) -> io::Result<()> {
         if let Some(watcher) = self.watcher.as_mut() {
             let mut should_reload = false;
 
@@ -116,6 +96,49 @@ impl Config {
                 self.reload(true).await;
             }
         }
+
+        Ok(())
+    }
+}
+
+impl Config {
+    /// Read configuration from a file
+    pub async fn read(path: PathBuf) -> Self {
+        // attempt to create a file watcher
+        let (tx, rx) = mpsc::channel(1);
+        let watcher = notify::recommended_watcher(move |res| {
+            if let Ok(event) = res {
+                let _ = tx.blocking_send(event);
+            }
+        })
+        .and_then(|mut watcher| {
+            watcher.watch(&path, notify::RecursiveMode::NonRecursive)?;
+            Ok(watcher)
+        })
+        .map(|inner| ConfigWatcher {
+            _inner: inner,
+            rx,
+            tx: broadcast::channel(1).0,
+        })
+        .ok();
+
+        if let None = watcher {
+            warn!("file watcher could not be created. config changes will not be detected.");
+        }
+
+        let mut config = Self {
+            data: Arc::new(Mutex::new(ConfigData::default())),
+            watcher,
+            path,
+        };
+        config.reload(false).await;
+
+        config
+    }
+
+    /// Subscribe to configuration change events
+    pub async fn subscribe(&self) -> Option<broadcast::Receiver<()>> {
+        self.watcher.as_ref().map(|w| w.tx.subscribe())
     }
 
     /// Reload configuration from a file
@@ -142,8 +165,33 @@ impl Config {
             }
         };
 
-        reload!(config, value, log, server, ServerConfig);
-        reload!(config, value, log, world, WorldConfig);
-        reload!(config, value, log, query, QueryConfig);
+        let mut announced = false;
+        reload!(
+            config,
+            self.watcher,
+            value,
+            log,
+            &mut announced,
+            server,
+            ServerConfig
+        );
+        reload!(
+            config,
+            self.watcher,
+            value,
+            log,
+            &mut announced,
+            world,
+            WorldConfig
+        );
+        reload!(
+            config,
+            self.watcher,
+            value,
+            log,
+            &mut announced,
+            query,
+            QueryConfig
+        );
     }
 }

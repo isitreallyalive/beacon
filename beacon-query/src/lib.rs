@@ -7,13 +7,17 @@ use std::{
     ffi::CString,
     io,
     net::SocketAddr,
-    rc::Rc,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
-use beacon_config::ConfigData;
+use beacon_config::{Config, ConfigData};
+use beacon_util::{Tickable, async_trait};
 use deku::{DekuContainerRead, DekuContainerWrite};
-use tokio::{net::UdpSocket, sync::Mutex};
+use tokio::{
+    net::UdpSocket,
+    sync::{Mutex, broadcast},
+};
 
 use crate::{
     req::{QueryRequest, StatRequest},
@@ -34,28 +38,17 @@ const CLEAR_INTERVAL: Duration = Duration::from_secs(30);
 
 pub struct QueryHandler {
     sock: UdpSocket,
-    config: Rc<Mutex<ConfigData>>,
+    config: Arc<Mutex<ConfigData>>,
+    config_rx: Option<broadcast::Receiver<()>>,
     /// Challenge tokens mapped by client address.
     tokens: HashMap<SocketAddr, i32>,
     /// Last time tokens were cleared.
     last_cleared: Instant,
 }
 
-impl QueryHandler {
-    pub async fn new(config: Rc<Mutex<ConfigData>>) -> io::Result<Self> {
-        let lock = config.lock().await;
-        let sock = UdpSocket::bind((lock.query.ip, lock.query.port)).await?;
-        drop(lock);
-
-        Ok(Self {
-            sock,
-            config,
-            tokens: HashMap::new(),
-            last_cleared: Instant::now(),
-        })
-    }
-
-    pub async fn tick(&mut self) -> io::Result<()> {
+#[async_trait]
+impl Tickable for QueryHandler {
+    async fn tick(&mut self) -> io::Result<()> {
         // clear tokens periodically
         let elapsed = self.last_cleared.elapsed();
         if elapsed >= CLEAR_INTERVAL && !self.tokens.is_empty() {
@@ -64,11 +57,38 @@ impl QueryHandler {
             debug!("clearing challenge tokens");
         }
 
+        // try recv
+        self.recv().await
+    }
+}
+
+impl QueryHandler {
+    /// Create a new query handler.
+    pub async fn new(config: &Config) -> io::Result<Self> {
+        let lock = config.lock().await;
+        let sock = UdpSocket::bind((lock.query.ip, lock.query.port)).await?;
+        drop(lock);
+
+        Ok(Self {
+            sock,
+            config: config.data.clone(),
+            config_rx: config.subscribe().await,
+            tokens: HashMap::new(),
+            last_cleared: Instant::now(),
+        })
+    }
+
+    /// Receive a query packet and respond.
+    async fn recv(&mut self) -> io::Result<()> {
         // read a packet
         let mut buf = [0u8; req::MAX_SIZE];
-        let (len, addr) = self.sock.recv_from(&mut buf).await?;
-        let (_, packet) = QueryRequest::from_bytes((&buf[..len], 0))?;
-        debug!("received {:?} from {}", packet, addr);
+        let (packet, addr) = if let Ok((len, addr)) = self.sock.try_recv_from(&mut buf) {
+            let (_, packet) = QueryRequest::from_bytes((&buf[..len], 0))?;
+            debug!("received {:?} from {}", packet, addr);
+            (packet, addr)
+        } else {
+            return Ok(());
+        };
 
         // respond
         let res = self.handle(packet, addr).await?;
@@ -77,6 +97,7 @@ impl QueryHandler {
         Ok(())
     }
 
+    /// Handle a query request.
     async fn handle(&mut self, req: QueryRequest, addr: SocketAddr) -> io::Result<QueryResponse> {
         let config = self.config.lock().await;
         let motd = CString::new(config.server.motd.clone())?;

@@ -23,7 +23,7 @@ impl State {
     /// Set up a new test state
     async fn setup() -> Result<Self> {
         let config = Config::default();
-        let handler = QueryHandler::new(config.data.clone()).await?;
+        let handler = QueryHandler::new(&config).await?;
         let addr = "0.0.0.0:0".parse()?;
         let session_id: i32 = rand::random();
         Ok(Self {

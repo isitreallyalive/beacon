@@ -3,12 +3,24 @@
 version = 4
 
 [[package]]
+name = "async-trait"
+version = "0.1.89"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9035ad2d096bed7955a320ee7e2230574d28fd3c3a0f186cbea1ff3c7eed5dbb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "beacon"
 version = "0.0.0"
 dependencies = [
  "beacon-config",
  "beacon-data",
  "beacon-query",
+ "beacon-util",
  "cargo-husky",
  "tokio",
  "tracing",
@@ -19,6 +31,7 @@ dependencies = [
 name = "beacon-config"
 version = "0.0.0"
 dependencies = [
+ "beacon-util",
  "notify",
  "serde",
  "tokio",
@@ -36,12 +49,20 @@ version = "0.0.0"
 dependencies = [
  "beacon-config",
  "beacon-data",
+ "beacon-util",
  "deku",
  "indexmap",
  "rand",
  "serial_test",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "beacon-util"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
 ]
 
 [[package]]

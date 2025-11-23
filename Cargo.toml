@@ -1,5 +1,5 @@
 [workspace]
-members = ["beacon", "beacon-config", "beacon-data", "beacon-query"]
+members = ["beacon", "beacon-config", "beacon-data", "beacon-query", "beacon-util"]
 resolver = "3"
 
 [workspace.package]
@@ -21,3 +21,5 @@ beacon-config = { path = "beacon-config" }
 serde = "1.0.228"
 toml = "0.9.8"
 notify = "8.2.0"
+async-trait = "0.1.89"
+beacon-util = { version = "0.0.0", path = "beacon-util" }
