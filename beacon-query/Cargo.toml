@@ -4,7 +4,12 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-deku = "0.20.0"
-rand = "0.9.2"
+beacon-data.workspace = true
+deku.workspace = true
+indexmap.workspace = true
+rand.workspace = true
 tokio = { workspace = true, features = ["net"] }
 tracing.workspace = true
+
+[dev-dependencies]
+serial_test.workspace = true

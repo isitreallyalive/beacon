@@ -1,18 +1,11 @@
 use std::{env, io};
 
+use beacon_data::{BEACON_VERSION, PROTOCOL_VERSION, SUPPORTED_VERSION};
+
 use crate::server::Beacon;
 
 #[macro_use]
 extern crate tracing;
-
-/// The current version of beacon.
-const BEACON_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// The protocol version corresponding with the Minecraft version that beacon targets.
-/// This is currently Minecraft **1.21.9** and **1.21.10**.
-///
-/// See: https://minecraft.wiki/w/Protocol_version
-const PROTOCOL_VERSION: u16 = 773;
 
 mod server;
 
@@ -28,6 +21,7 @@ async fn main() -> io::Result<()> {
         os = env::consts::OS,
         arch = env::consts::ARCH,
         protocol = PROTOCOL_VERSION,
+        supports = SUPPORTED_VERSION,
         debug = cfg!(debug_assertions),
         "build info"
     );
