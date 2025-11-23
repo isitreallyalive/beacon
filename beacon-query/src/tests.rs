@@ -1,12 +1,10 @@
-use std::{net::SocketAddr, rc::Rc};
+use std::net::SocketAddr;
 
 use beacon_config::Config;
 use serial_test::serial;
-use tokio::sync::Mutex;
 
 use crate::{
-    GAME_TYPE, QueryHandler,
-    kv::KeyValue,
+    QueryHandler,
     req::{QueryRequest, StatRequest},
     res::*,
 };
@@ -15,7 +13,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Test state
 struct State {
-    config: Rc<Mutex<Config>>,
+    config: Config,
     handler: QueryHandler,
     addr: SocketAddr,
     session_id: i32,
@@ -24,8 +22,8 @@ struct State {
 impl State {
     /// Set up a new test state
     async fn setup() -> Result<Self> {
-        let config = Rc::new(Mutex::new(Config::default()));
-        let handler = QueryHandler::new(config.clone()).await?;
+        let config = Config::default();
+        let handler = QueryHandler::new(config.data.clone()).await?;
         let addr = "0.0.0.0:0".parse()?;
         let session_id: i32 = rand::random();
         Ok(Self {

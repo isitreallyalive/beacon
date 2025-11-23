@@ -69,6 +69,6 @@ lazy_string! {
     // hard-coded full stat values
     GAME_TYPE = "SMP";
     GAME_ID = "MINECRAFT";
-    VERSION = beacon_data::SUPPORTED_VERSION;
+    VERSION = beacon_data::LATEST_SUPPORTED;
     PLUGINS = ""; // no plugins
 }

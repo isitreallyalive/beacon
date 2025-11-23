@@ -11,7 +11,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use beacon_config::Config;
+use beacon_config::ConfigData;
 use deku::{DekuContainerRead, DekuContainerWrite};
 use tokio::{net::UdpSocket, sync::Mutex};
 
@@ -34,7 +34,7 @@ const CLEAR_INTERVAL: Duration = Duration::from_secs(30);
 
 pub struct QueryHandler {
     sock: UdpSocket,
-    config: Rc<Mutex<Config>>,
+    config: Rc<Mutex<ConfigData>>,
     /// Challenge tokens mapped by client address.
     tokens: HashMap<SocketAddr, i32>,
     /// Last time tokens were cleared.
@@ -42,7 +42,7 @@ pub struct QueryHandler {
 }
 
 impl QueryHandler {
-    pub async fn new(config: Rc<Mutex<Config>>) -> io::Result<Self> {
+    pub async fn new(config: Rc<Mutex<ConfigData>>) -> io::Result<Self> {
         let lock = config.lock().await;
         let sock = UdpSocket::bind((lock.query.ip, lock.query.port)).await?;
         drop(lock);

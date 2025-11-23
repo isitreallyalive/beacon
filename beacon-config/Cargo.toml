@@ -4,5 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+notify.workspace = true
 serde = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["sync"] }
 toml.workspace = true
+tracing.workspace = true
