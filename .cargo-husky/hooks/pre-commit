@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# formatting
+cargo fmt --all
+cargo autoinherit --prefer-simple-dotted
+
+# re-add any files that were modified by the above commands
+git add --update
+git add Cargo.toml Cargo.lock

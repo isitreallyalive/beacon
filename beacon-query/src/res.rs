@@ -33,7 +33,7 @@ pub enum QueryResponse {
         kv: KeyValue,
         player_marker: [u8; 10],
         players: Vec<CString>,
-        nul: u8
+        nul: u8,
     },
     /// See: https://minecraft.wiki/w/Query#Response
     #[deku(id = "0x09")]

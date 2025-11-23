@@ -16,3 +16,4 @@ rand = "0.9.2"
 serial_test = "3.2.0"
 indexmap = "2.12.1"
 beacon-data = { path = "beacon-data" }
+cargo-husky = { version = "1.5.0", default-features = false }

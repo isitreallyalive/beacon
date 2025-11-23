@@ -9,3 +9,6 @@ beacon-query.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[dev-dependencies]
+cargo-husky = { workspace = true, features = ["user-hooks"] }

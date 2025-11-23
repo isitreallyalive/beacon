@@ -164,7 +164,7 @@ impl QueryHandler {
                         player_marker: res::PLAYER_MARKER,
                         // todo: fetch player list from server
                         players: vec![],
-                        nul: 0
+                        nul: 0,
                     }
                 } else {
                     QueryResponse::BasicStat {
