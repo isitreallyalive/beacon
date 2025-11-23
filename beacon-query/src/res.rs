@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::{cell::LazyCell, ffi::CString};
 
 use deku::prelude::*;
 
@@ -41,4 +41,34 @@ pub enum QueryResponse {
         session_id: i32,
         challenge_token: CString,
     },
+}
+
+macro_rules! lazy_string {
+    ($(
+        $name:ident = $value:expr $(;)? // optional trailing semicolon
+    );+) => {
+        $(
+            pub const $name: LazyCell<CString> = LazyCell::new(|| CString::new($value).unwrap());
+        )+
+    };
+}
+
+lazy_string! {
+    // full stat keys
+    HOSTNAME_KEY = "hostname";
+    GAMETYPE_KEY = "gametype";
+    GAME_ID_KEY = "game_id";
+    VERSION_KEY = "version";
+    PLUGINS_KEY = "plugins";
+    MAP_KEY = "map";
+    NUMPLAYERS_KEY = "numplayers";
+    MAXPLAYERS_KEY = "maxplayers";
+    HOSTPORT_KEY = "hostport";
+    HOSTIP_KEY = "hostip";
+
+    // hard-coded full stat values
+    GAME_TYPE = "SMP";
+    GAME_ID = "MINECRAFT";
+    VERSION = beacon_data::SUPPORTED_VERSION;
+    PLUGINS = ""; // no plugins
 }

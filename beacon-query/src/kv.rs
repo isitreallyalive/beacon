@@ -6,6 +6,13 @@ use indexmap::IndexMap;
 #[derive(Debug, Default)]
 pub struct KeyValue(IndexMap<CString, CString>);
 
+#[cfg(test)]
+impl KeyValue {
+    pub(crate) fn get(&self, key: CString) -> Option<String> {
+        self.0.get(&key).map(|v| v.to_string_lossy().into_owned())
+    }
+}
+
 impl ops::Deref for KeyValue {
     type Target = IndexMap<CString, CString>;
 

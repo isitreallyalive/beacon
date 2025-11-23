@@ -4,11 +4,12 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+beacon-config.workspace = true
 beacon-data.workspace = true
 deku.workspace = true
 indexmap.workspace = true
 rand.workspace = true
-tokio = { workspace = true, features = ["net"] }
+tokio = { workspace = true, features = ["net", "sync"] }
 tracing.workspace = true
 
 [dev-dependencies]

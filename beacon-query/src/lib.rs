@@ -3,20 +3,21 @@
 //! See: https://minecraft.wiki/w/Query
 
 use std::{
-    cell::LazyCell,
     collections::HashMap,
     ffi::CString,
     io,
     net::SocketAddr,
+    rc::Rc,
     time::{Duration, Instant},
 };
 
+use beacon_config::Config;
 use deku::{DekuContainerRead, DekuContainerWrite};
-use tokio::net::UdpSocket;
+use tokio::{net::UdpSocket, sync::Mutex};
 
 use crate::{
     req::{QueryRequest, StatRequest},
-    res::QueryResponse,
+    res::*,
 };
 
 #[macro_use]
@@ -31,38 +32,9 @@ mod tests;
 /// How often to clear challenge tokens.
 const CLEAR_INTERVAL: Duration = Duration::from_secs(30);
 
-macro_rules! lazy_string {
-    ($(
-        $name:ident = $value:expr $(;)? // optional trailing semicolon
-    );+) => {
-        $(
-            const $name: LazyCell<CString> = LazyCell::new(|| CString::new($value).unwrap());
-        )+
-    };
-}
-
-lazy_string! {
-    // full stat keys
-    HOSTNAME_KEY = "hostname";
-    GAMETYPE_KEY = "gametype";
-    GAME_ID_KEY = "game_id";
-    VERSION_KEY = "version";
-    PLUGINS_KEY = "plugins";
-    MAP_KEY = "map";
-    NUMPLAYERS_KEY = "numplayers";
-    MAXPLAYERS_KEY = "maxplayers";
-    HOSTPORT_KEY = "hostport";
-    HOSTIP_KEY = "hostip";
-
-    // hard-coded full stat values
-    GAME_TYPE = "SMP";
-    GAME_ID = "MINECRAFT";
-    VERSION = beacon_data::SUPPORTED_VERSION;
-    PLUGINS = ""; // no plugins
-}
-
 pub struct QueryHandler {
     sock: UdpSocket,
+    config: Rc<Mutex<Config>>,
     /// Challenge tokens mapped by client address.
     tokens: HashMap<SocketAddr, i32>,
     /// Last time tokens were cleared.
@@ -70,9 +42,14 @@ pub struct QueryHandler {
 }
 
 impl QueryHandler {
-    pub async fn new() -> io::Result<Self> {
+    pub async fn new(config: Rc<Mutex<Config>>) -> io::Result<Self> {
+        let lock = config.lock().await;
+        let sock = UdpSocket::bind((lock.query.ip, lock.query.port)).await?;
+        drop(lock);
+
         Ok(Self {
-            sock: UdpSocket::bind("0.0.0.0:25565").await?,
+            sock,
+            config,
             tokens: HashMap::new(),
             last_cleared: Instant::now(),
         })
@@ -94,20 +71,20 @@ impl QueryHandler {
         debug!("received {:?} from {}", packet, addr);
 
         // respond
-        let res = self.handle(packet, addr)?;
+        let res = self.handle(packet, addr).await?;
         self.sock.send_to(&res.to_bytes()?, addr).await?;
 
         Ok(())
     }
 
-    fn handle(&mut self, req: QueryRequest, addr: SocketAddr) -> io::Result<QueryResponse> {
-        // todo: get this data from the server
-        let motd = CString::new("Beacon Server")?;
-        let map = CString::new("world")?;
-        let num_players = CString::new("0")?;
-        let max_players = CString::new("20")?;
-        let host_port = 25565;
-        let host_ip = CString::new("127.0.0.1")?;
+    async fn handle(&mut self, req: QueryRequest, addr: SocketAddr) -> io::Result<QueryResponse> {
+        let config = self.config.lock().await;
+        let motd = CString::new(config.server.motd.clone())?;
+        let map = CString::new(config.world.name.clone())?;
+        let num_players = CString::new("0")?; // todo: get from server somehow
+        let max_players = CString::new(config.server.max_players.to_string())?;
+        let host_port = config.server.port;
+        let host_ip = CString::new(config.server.ip.to_string())?;
 
         Ok(match req {
             QueryRequest::Handshake { session_id } => {

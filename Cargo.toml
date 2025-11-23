@@ -1,5 +1,5 @@
 [workspace]
-members = ["beacon", "beacon-data", "beacon-query"]
+members = ["beacon", "beacon-config", "beacon-data", "beacon-query"]
 resolver = "3"
 
 [workspace.package]
@@ -17,3 +17,6 @@ serial_test = "3.2.0"
 indexmap = "2.12.1"
 beacon-data = { path = "beacon-data" }
 cargo-husky = { version = "1.5.0", default-features = false }
+beacon-config = { path = "beacon-config" }
+serde = "1.0.228"
+toml = "0.9.8"

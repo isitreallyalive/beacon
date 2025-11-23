@@ -4,9 +4,10 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+beacon-config.workspace = true
 beacon-data.workspace = true
 beacon-query.workspace = true
-tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 

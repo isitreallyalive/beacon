@@ -1,7 +1,10 @@
-use std::io;
+use std::{io, rc::Rc};
+
+use beacon_config::Config;
+use tokio::sync::Mutex;
 
 pub struct Beacon {
-    // game: TcpListener,
+    // server: TcpListener,
     query: beacon_query::QueryHandler,
     // rcon: TcpListener,
     // msmp: TcpListener
@@ -9,7 +12,8 @@ pub struct Beacon {
 
 impl Beacon {
     pub async fn new() -> io::Result<Self> {
-        let query = beacon_query::QueryHandler::new().await?;
+        let config = Rc::new(Mutex::new(Config::default()));
+        let query = beacon_query::QueryHandler::new(config).await?;
         Ok(Self { query })
     }
 
