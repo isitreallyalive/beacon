@@ -41,7 +41,7 @@ pub struct ConfigUpdate(pub Config);
 pub struct ConfigActor {
     data: Config,
     path: PathBuf,
-    update_pub: ActorRef<PubSub<ConfigUpdate>>,
+    config_update: ActorRef<PubSub<ConfigUpdate>>,
     #[allow(dead_code)]
     watcher: notify::RecommendedWatcher,
 }
@@ -51,7 +51,7 @@ impl Actor for ConfigActor {
     type Error = ConfigError;
 
     async fn on_start(
-        (data, path, update_pub): Self::Args,
+        (data, path, config_update): Self::Args,
         actor_ref: ActorRef<Self>,
     ) -> Result<Self, Self::Error> {
         // create file watcher
@@ -84,7 +84,7 @@ impl Actor for ConfigActor {
         Ok(Self {
             data,
             path,
-            update_pub,
+            config_update,
             watcher,
         })
     }
@@ -97,7 +97,7 @@ impl Message<ReloadConfig> for ConfigActor {
         // reload config and inform subscribers
         let _ = self.data.reload(&self.path);
         let _ = self
-            .update_pub
+            .config_update
             .tell(Publish(ConfigUpdate(self.data.clone())))
             .await;
     }

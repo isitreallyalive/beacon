@@ -1,7 +1,7 @@
 [server]
 port = 25565
 motd = "A Beacon Server"
-max_players = 22
+max_players = 20
 
 [world]
 name = "world"

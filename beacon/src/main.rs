@@ -7,6 +7,7 @@ use kameo::prelude::*;
 use kameo_actors::{
     DeliveryStrategy,
     pubsub::{PubSub, Subscribe},
+    scheduler::Scheduler,
 };
 
 use crate::error::BeaconError;
@@ -34,15 +35,18 @@ async fn main() -> Result<(), BeaconError> {
         "build info"
     );
 
+    // shared actors
+    let scheduler = Scheduler::spawn_default();
+    let config_update = PubSub::spawn(PubSub::new(DeliveryStrategy::BestEffort));
+
     // config watcher
     let config_path = "beacon.toml".into();
     let config = Config::read(&config_path)?;
-    let config_pubsub = PubSub::spawn(PubSub::new(DeliveryStrategy::BestEffort));
-    ConfigActor::spawn((config.clone(), config_path, config_pubsub.clone()));
+    ConfigActor::spawn((config.clone(), config_path, config_update.clone()));
 
     // query protocol
-    let query = QueryActor::spawn(config);
-    config_pubsub.tell(Subscribe(query)).await?;
+    let query = QueryActor::spawn((config, scheduler.clone()));
+    config_update.tell(Subscribe(query)).await?;
 
     // wait for ctrl-c
     tokio::signal::ctrl_c().await?;
