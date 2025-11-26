@@ -1,8 +1,8 @@
-use std::{cell::LazyCell, ffi::CString};
+use std::cell::LazyCell;
 
 use deku::prelude::*;
 
-use crate::kv::KeyValue;
+use crate::{kv::KeyValue, string::CString};
 
 pub const KV_MARKER: [u8; 11] = [
     0x73, 0x70, 0x6C, 0x69, 0x74, 0x6E, 0x75, 0x6D, 0x00, 0x80, 0x00,

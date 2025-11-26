@@ -1,9 +1,11 @@
-use std::{ffi::CString, io, ops};
+use std::{io, ops};
 
 use deku::{ctx::Endian, prelude::*};
 use indexmap::IndexMap;
 
-#[derive(Debug, Default)]
+use crate::string::CString;
+
+#[derive(Default)]
 pub struct KeyValue(IndexMap<CString, CString>);
 
 #[cfg(test)]

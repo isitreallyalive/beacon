@@ -36,15 +36,7 @@ struct ReloadConfig;
 
 /// Message published when config is updated
 #[derive(Clone)]
-pub struct ConfigUpdate(Config);
-
-impl std::ops::Deref for ConfigUpdate {
-    type Target = Config;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+pub struct ConfigUpdate(pub Config);
 
 pub struct ConfigActor {
     data: Config,
@@ -74,10 +66,10 @@ impl Actor for ConfigActor {
                     // deduplicate events
                     let now = Instant::now();
                     unsafe {
-                        if let Some(last) = LAST {
-                            if now.duration_since(last) < Duration::from_millis(500) {
-                                return;
-                            }
+                        if let Some(last) = LAST
+                            && now.duration_since(last) < Duration::from_millis(500)
+                        {
+                            return;
                         }
                         LAST = Some(now);
                     }
