@@ -11,6 +11,7 @@ pub struct Config {
     pub query: QueryConfig,
 }
 
+/// Load a section of the config, falling back to defaults on error
 macro_rules! load {
     ($value:expr, $field:ident ($ty:ty)) => {
         let $field = $value
@@ -26,15 +27,8 @@ macro_rules! load {
     };
 }
 
-macro_rules! changed {
-    ($old:expr => $new:expr, $field:ident) => {
-        if $old.$field != $new.$field {
-            $old.$field = $new.$field;
-        }
-    };
-}
-
 impl Config {
+    /// Read the config from the given path, creating it with defaults if it doesn't exist
     pub fn read(path: &PathBuf) -> Result<Self, ConfigError> {
         // read the file contents
         let value: toml::Value = match fs::read_to_string(path) {
@@ -60,11 +54,9 @@ impl Config {
         })
     }
 
-    pub fn reload(&mut self, path: &PathBuf) -> Result<(), ConfigError> {
-        let new = Self::read(path)?;
-        changed!(self => new, server);
-        changed!(self => new, world);
-        changed!(self => new, query);
+    /// Reload the config from the given path
+    pub(crate) fn reload(&mut self, path: &PathBuf) -> Result<(), ConfigError> {
+        *self = Self::read(path)?;
         Ok(())
     }
 }

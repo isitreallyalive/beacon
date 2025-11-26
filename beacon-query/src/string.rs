@@ -4,11 +4,11 @@ use deku::{ctx::Endian, prelude::*};
 
 /// A reference-counted C-style string. Makes cloning cheap (necessary for deku).
 #[derive(Clone, Default, Hash, PartialEq, Eq)]
-pub struct CString(Arc<ffi::CString>);
+pub(crate) struct CString(Arc<ffi::CString>);
 
 impl CString {
-    pub fn new<S: AsRef<str>>(s: S) -> Result<Self, ffi::NulError> {
-        Ok(Self(Arc::new(ffi::CString::new(s.as_ref())?)))
+    pub fn new<S: Into<Vec<u8>>>(s: S) -> Result<Self, ffi::NulError> {
+        Ok(Self(Arc::new(ffi::CString::new(s)?)))
     }
 }
 

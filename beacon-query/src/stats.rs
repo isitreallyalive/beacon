@@ -3,7 +3,7 @@ use beacon_config::Config;
 use crate::string::CString;
 
 /// Cached server statistics
-pub struct StatsCache {
+pub(crate) struct StatsCache {
     pub motd: CString,
     pub map: CString,
     pub num_players: CString,

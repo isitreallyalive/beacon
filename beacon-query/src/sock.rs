@@ -17,10 +17,10 @@ use crate::{
 };
 
 type UdpPacket = (QueryRequest, SocketAddr);
-pub type UdpMessage = StreamMessage<UdpPacket, (), ()>;
+pub(crate) type UdpMessage = StreamMessage<UdpPacket, (), ()>;
 
 /// UDP socket that manages its own stream handler.
-pub struct UdpSocket {
+pub(crate) struct UdpSocket {
     sock: Arc<net::UdpSocket>,
     handle: JoinHandle<Result<UdpStream, SendError<UdpMessage>>>,
 }

@@ -52,7 +52,7 @@ pub struct QueryActor {
 }
 
 impl QueryActor {
-    pub async fn handle(
+    async fn handle(
         &mut self,
         req: QueryRequest,
         addr: SocketAddr,
@@ -91,7 +91,6 @@ impl QueryActor {
                 if full {
                     QueryResponse::FullStat {
                         session_id,
-                        kv_marker: KV_MARKER,
                         kv: {
                             let mut kv = KeyValue::default();
                             kv.insert(HOSTNAME_KEY.clone(), self.stats.motd.clone());
@@ -109,10 +108,8 @@ impl QueryActor {
                             kv.insert(HOSTIP_KEY.clone(), self.stats.host_ip.clone());
                             kv
                         },
-                        player_marker: PLAYER_MARKER,
                         // todo: fetch player list from server
                         players: vec![],
-                        nul: 0,
                     }
                 } else {
                     QueryResponse::BasicStat {

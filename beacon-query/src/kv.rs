@@ -5,15 +5,9 @@ use indexmap::IndexMap;
 
 use crate::string::CString;
 
+/// An ordered key-value store.
 #[derive(Default)]
-pub struct KeyValue(IndexMap<CString, CString>);
-
-#[cfg(test)]
-impl KeyValue {
-    pub(crate) fn get(&self, key: CString) -> Option<String> {
-        self.0.get(&key).map(|v| v.to_string_lossy().into_owned())
-    }
-}
+pub(crate) struct KeyValue(IndexMap<CString, CString>);
 
 impl ops::Deref for KeyValue {
     type Target = IndexMap<CString, CString>;

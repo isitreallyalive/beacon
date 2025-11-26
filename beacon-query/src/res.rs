@@ -1,17 +1,12 @@
-use std::cell::LazyCell;
+use std::sync::LazyLock;
 
 use deku::prelude::*;
 
 use crate::{kv::KeyValue, string::CString};
 
-pub const KV_MARKER: [u8; 11] = [
-    0x73, 0x70, 0x6C, 0x69, 0x74, 0x6E, 0x75, 0x6D, 0x00, 0x80, 0x00,
-]; // "splitnum\0\x80\0"
-pub const PLAYER_MARKER: [u8; 10] = [0x01, 0x70, 0x6C, 0x61, 0x79, 0x65, 0x72, 0x5F, 0x00, 0x00]; // "\x01player_\0\0"
-
 #[derive(DekuWrite)]
 #[deku(endian = "big", id_type = "u8")]
-pub enum QueryResponse {
+pub(crate) enum QueryResponse {
     /// See: https://minecraft.wiki/w/Query#Response_2
     #[deku(id = "0x00")]
     BasicStat {
@@ -29,11 +24,10 @@ pub enum QueryResponse {
     #[deku(id = "0x00")]
     FullStat {
         session_id: i32,
-        kv_marker: [u8; 11],
+        #[deku(pad_bytes_before = "11")]
         kv: KeyValue,
-        player_marker: [u8; 10],
+        #[deku(pad_bytes_before = "10", pad_bytes_after = "1")]
         players: Vec<CString>,
-        nul: u8,
     },
     /// See: https://minecraft.wiki/w/Query#Response
     #[deku(id = "0x09")]
@@ -48,7 +42,7 @@ macro_rules! lazy_string {
         $name:ident = $value:expr $(;)? // optional trailing semicolon
     );+) => {
         $(
-            pub const $name: LazyCell<CString> = LazyCell::new(|| CString::new($value).unwrap());
+            pub static $name: LazyLock<CString> = LazyLock::new(|| CString::new($value).unwrap());
         )+
     };
 }

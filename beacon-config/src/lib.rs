@@ -31,13 +31,14 @@ pub enum ConfigError {
     Io(#[from] std::io::Error),
 }
 
-/// Internal message to trigger config reload
+/// Message to trigger a config reload
 struct ReloadConfig;
 
-/// Message published when config is updated
+/// Message to notify subscribers of config updates
 #[derive(Clone)]
 pub struct ConfigUpdate(pub Config);
 
+/// Manages configuration file hot reloading.
 pub struct ConfigActor {
     data: Config,
     path: PathBuf,
@@ -74,7 +75,8 @@ impl Actor for ConfigActor {
                         LAST = Some(now);
                     }
 
-                    // send the event
+                    // send the event after debouncing
+                    std::thread::sleep(Duration::from_millis(100));
                     let _ = actor_ref.tell(ReloadConfig).try_send();
                 }
             })?;

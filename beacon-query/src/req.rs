@@ -9,7 +9,7 @@ pub const MAX_SIZE: usize = 2 + 1 + 4 + 4 + 4;
 
 #[derive(Debug, DekuRead)]
 #[deku(endian = "big", id_type = "u8", magic = b"\xFE\xFD")]
-pub enum QueryRequest {
+pub(crate) enum QueryRequest {
     /// Basic stat: https://minecraft.wiki/w/Query#Request_2
     ///
     /// Full stat: https://minecraft.wiki/w/Query#Request_2
@@ -21,7 +21,7 @@ pub enum QueryRequest {
 }
 
 #[derive(Debug)]
-pub struct StatRequest {
+pub(crate) struct StatRequest {
     pub session_id: i32,
     pub challenge_token: i32,
     pub full: bool,

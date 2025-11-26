@@ -1,5 +1,6 @@
 use std::env::consts;
 
+use beacon::BeaconError;
 use beacon_config::{Config, ConfigActor};
 use beacon_data::BEACON_VERSION;
 use beacon_query::QueryActor;
@@ -10,12 +11,8 @@ use kameo_actors::{
     scheduler::Scheduler,
 };
 
-use crate::error::BeaconError;
-
 #[macro_use]
 extern crate tracing;
-
-mod error;
 
 #[tokio::main]
 async fn main() -> Result<(), BeaconError> {
