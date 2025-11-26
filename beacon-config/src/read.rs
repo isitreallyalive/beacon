@@ -1,11 +1,11 @@
-use std::{default, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 use serde::Deserialize;
 
 use crate::{ConfigError, def::*};
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ConfigData {
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct Config {
     pub server: ServerConfig,
     pub world: WorldConfig,
     pub query: QueryConfig,
@@ -29,13 +29,12 @@ macro_rules! load {
 macro_rules! changed {
     ($old:expr => $new:expr, $field:ident) => {
         if $old.$field != $new.$field {
-            info!("reloaded {} config", stringify!($field));
             $old.$field = $new.$field;
         }
     };
 }
 
-impl ConfigData {
+impl Config {
     pub fn read(path: &PathBuf) -> Result<Self, ConfigError> {
         // read the file contents
         let value: toml::Value = match fs::read_to_string(path) {

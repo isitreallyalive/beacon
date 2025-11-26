@@ -12,6 +12,7 @@ dependencies = [
  "cargo-husky",
  "kameo",
  "kameo_actors",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -41,9 +42,14 @@ dependencies = [
  "beacon-config",
  "beacon-data",
  "deku",
+ "futures",
  "indexmap",
+ "kameo",
+ "kameo_actors",
  "rand",
  "serial_test",
+ "thiserror",
+ "tokio",
  "tracing",
 ]
 
@@ -742,6 +748,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 
 [[package]]
+name = "socket2"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17129e116933cf371d018bb80ae557e889637989d8638274fb25622827b03881"
+dependencies = [
+ "libc",
+ "windows-sys 0.60.2",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -803,6 +819,7 @@ dependencies = [
  "mio",
  "pin-project-lite",
  "signal-hook-registry",
+ "socket2",
  "tokio-macros",
  "tracing",
  "windows-sys 0.61.2",

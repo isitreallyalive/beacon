@@ -2,7 +2,7 @@ use std::net::Ipv4Addr;
 
 const ALL_INTERFACES: Ipv4Addr = Ipv4Addr::new(0, 0, 0, 0);
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct ServerConfig {
     #[serde(skip_serializing)]
@@ -23,7 +23,7 @@ impl Default for ServerConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorldConfig {
     pub name: String,
 }
@@ -36,7 +36,7 @@ impl Default for WorldConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct QueryConfig {
     #[serde(skip_serializing)]

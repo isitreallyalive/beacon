@@ -9,6 +9,7 @@ beacon-data.workspace = true
 beacon-query.workspace = true
 kameo.workspace = true
 kameo_actors.workspace = true
+thiserror.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal", "time"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true

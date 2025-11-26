@@ -7,8 +7,13 @@ edition.workspace = true
 beacon-config.workspace = true
 beacon-data.workspace = true
 deku.workspace = true
+futures.workspace = true
 indexmap.workspace = true
+kameo.workspace = true
+kameo_actors.workspace = true
 rand.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["net"] }
 tracing.workspace = true
 
 [dev-dependencies]
