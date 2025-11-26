@@ -1,12 +1,12 @@
 use std::{env, io};
 
-use crate::server::Beacon;
+use beacon_config::ConfigActor;
 use beacon_data::BEACON_VERSION;
+use kameo::prelude::*;
+use kameo_actors::{DeliveryStrategy, pubsub::PubSub};
 
 #[macro_use]
 extern crate tracing;
-
-mod server;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -26,8 +26,9 @@ async fn main() -> io::Result<()> {
         "build info"
     );
 
-    let server = Beacon::new().await?;
-    server.start().await;
+    let config_pubsub = PubSub::spawn(PubSub::new(DeliveryStrategy::BestEffort));
+    ConfigActor::spawn(("beacon.toml".into(), config_pubsub));
 
-    Ok(())
+    // wait for ctrl-c
+    tokio::signal::ctrl_c().await
 }

@@ -4,9 +4,10 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-beacon-util.workspace = true
+kameo.workspace = true
+kameo_actors.workspace = true
 notify.workspace = true
 serde = { workspace = true, features = ["derive"] }
-tokio = { workspace = true, features = ["sync"] }
+thiserror.workspace = true
 toml.workspace = true
 tracing.workspace = true
