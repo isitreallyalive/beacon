@@ -1,5 +1,7 @@
 use std::net::Ipv4Addr;
 
+use serde::{Deserialize, Serialize};
+
 const ALL_INTERFACES: Ipv4Addr = Ipv4Addr::new(0, 0, 0, 0);
 
 macro_rules! define {
@@ -55,7 +57,6 @@ macro_rules! define {
 // difficulty=easy
 // enable-code-of-conduct=false
 // enable-jmx-monitoring=false
-// enable-query=false
 // enable-rcon=false
 // enable-status=true
 // enforce-secure-profile=true
@@ -139,7 +140,8 @@ define! {
     }
 
     struct QueryConfig {
-        // todo: enable
+        /// Whether to enable the query listener.
+        enable: bool = false,
         /// The IP address the query listener listens on.
         #[serde(skip_serializing)]
         ip: Ipv4Addr = ALL_INTERFACES,

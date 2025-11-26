@@ -7,4 +7,4 @@ max-players = 20
 name = "world"
 
 [query]
-port = 25565
+enable = true

@@ -28,11 +28,11 @@ pub(crate) struct UdpSocket {
 impl UdpSocket {
     pub async fn bind(
         addr: impl Into<SocketAddr>,
-        actor_ref: &ActorRef<QueryActor>,
+        actor: &ActorRef<QueryActor>,
     ) -> std::io::Result<Self> {
         // bind the udp socket and register the stream handler
         let sock = Arc::new(net::UdpSocket::bind(addr.into()).await?);
-        let handle = actor_ref.attach_stream(UdpStream(sock.clone()), (), ());
+        let handle = actor.attach_stream(UdpStream(sock.clone()), (), ());
         Ok(Self { sock, handle })
     }
 }
