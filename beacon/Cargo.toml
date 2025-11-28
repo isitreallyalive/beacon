@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 beacon-config.workspace = true
 beacon-data.workspace = true
+beacon-java.workspace = true
 beacon-query.workspace = true
 beacon-tui.workspace = true
 kameo.workspace = true

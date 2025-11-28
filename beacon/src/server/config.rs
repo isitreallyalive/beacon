@@ -113,6 +113,12 @@ impl Message<WatcherEvent> for BeaconActor {
                     // send out config updates
                     // send the event after debouncing
                     tokio::time::sleep(DEBOUNCE).await;
+
+                    self.java
+                        .tell(self.config.clone())
+                        .await
+                        .map_err(ConfigError::from)?;
+
                     if let Some(query) = &self.query {
                         query
                             .tell(self.config.clone())

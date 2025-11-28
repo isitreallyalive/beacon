@@ -12,10 +12,6 @@ fn main() {
             let len = package.name.trim_start_matches("beacon-").len();
             if len > max_len {
                 max_len = len;
-                println!(
-                    "cargo:warning=New max target length: {} (from package {})",
-                    max_len, package.name
-                );
             }
         }
     }

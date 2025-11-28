@@ -5,6 +5,7 @@
 use std::{collections::HashMap, net::SocketAddr, time::Duration};
 
 use beacon_config::Config;
+use beacon_java::JavaActor;
 use deku::DekuContainerWrite;
 use kameo::{message::StreamMessage, prelude::*};
 use kameo_actors::scheduler::{Scheduler, SetTimeout};
@@ -46,14 +47,15 @@ pub struct QueryActor {
     sock: UdpSocket,
     stats: StatsCache,
     tokens: HashMap<SocketAddr, i32>,
+    java: ActorRef<JavaActor>,
 }
 
 impl Actor for QueryActor {
-    type Args = (Config, ActorRef<Scheduler>);
+    type Args = (Config, ActorRef<JavaActor>, ActorRef<Scheduler>);
     type Error = QueryError;
 
     async fn on_start(
-        (config, scheduler): Self::Args,
+        (config, java, scheduler): Self::Args,
         actor: ActorRef<Self>,
     ) -> Result<Self, Self::Error> {
         let sock = UdpSocket::bind((config.query.ip, config.query.port), &actor).await?;
@@ -68,12 +70,13 @@ impl Actor for QueryActor {
             ))
             .await;
 
-        info!("listening on {}", sock.local_addr()?);
+        info!("listening on {}/udp", sock.local_addr()?);
 
         Ok(Self {
             sock,
             stats,
             tokens: HashMap::new(),
+            java,
         })
     }
 

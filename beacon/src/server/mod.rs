@@ -2,6 +2,7 @@ use std::{env::consts, path::PathBuf};
 
 use beacon::BeaconError;
 use beacon_data::BEACON_VERSION;
+use beacon_java::JavaActor;
 use beacon_query::QueryActor;
 use beacon_tui::{Stop, TuiActor};
 use kameo::prelude::*;
@@ -14,11 +15,10 @@ mod config;
 /// Supervisor actor for the beacon server.
 pub(crate) struct BeaconActor {
     config: BeaconConfig,
-
-    /// Scheduler for managing tasks on an interval.
     scheduler: ActorRef<Scheduler>,
     #[allow(dead_code)]
     tui: ActorRef<TuiActor<Self>>,
+    java: ActorRef<JavaActor>,
     query: Option<ActorRef<QueryActor>>,
 }
 
@@ -33,12 +33,14 @@ impl Actor for BeaconActor {
         let config = BeaconConfig::new(config_path, actor_ref.clone())?;
         let scheduler = Scheduler::spawn_default();
         let tui = TuiActor::spawn_with_mailbox(actor_ref, mailbox::unbounded());
+        let java = JavaActor::spawn(config.clone());
 
         // sync with config
         let mut actor = Self {
             config,
             scheduler,
             tui,
+            java,
             query: None,
         };
         actor.sync();
@@ -69,6 +71,7 @@ impl BeaconActor {
             None if self.config.query.enable => {
                 self.query = Some(QueryActor::spawn((
                     self.config.clone(),
+                    self.java.clone(),
                     self.scheduler.clone(),
                 )));
             }

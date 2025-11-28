@@ -1,5 +1,7 @@
 use std::net::SocketAddr;
 
+use beacon_java::GetPlayerCount;
+
 use crate::{
     QueryActor, QueryError,
     kv::KeyValue,
@@ -46,6 +48,10 @@ impl QueryActor {
                     return Err(QueryError::InvalidToken(addr));
                 }
 
+                // get the current number of players from the Java server
+                let num_players =
+                    CString::new(self.java.ask(GetPlayerCount).await.unwrap_or(0).to_string())?;
+
                 if full {
                     QueryResponse::FullStat {
                         session_id,
@@ -57,7 +63,7 @@ impl QueryActor {
                             kv.insert(VERSION_KEY.clone(), VERSION.clone());
                             kv.insert(PLUGINS_KEY.clone(), PLUGINS.clone());
                             kv.insert(MAP_KEY.clone(), self.stats.map.clone());
-                            kv.insert(NUMPLAYERS_KEY.clone(), self.stats.num_players.clone());
+                            kv.insert(NUMPLAYERS_KEY.clone(), num_players);
                             kv.insert(MAXPLAYERS_KEY.clone(), self.stats.max_players.clone());
                             kv.insert(
                                 HOSTPORT_KEY.clone(),
@@ -75,7 +81,7 @@ impl QueryActor {
                         motd: self.stats.motd.clone(),
                         game_type: GAME_TYPE.clone(),
                         map: self.stats.map.clone(),
-                        num_players: self.stats.num_players.clone(),
+                        num_players,
                         max_players: self.stats.max_players.clone(),
                         host_port: self.stats.host_port,
                         host_ip: self.stats.host_ip.clone(),

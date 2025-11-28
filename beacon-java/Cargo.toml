@@ -1,0 +1,10 @@
+[package]
+name = "beacon-java"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+beacon-config.workspace = true
+kameo.workspace = true
+tokio = { workspace = true, features = ["net"] }
+tracing.workspace = true
