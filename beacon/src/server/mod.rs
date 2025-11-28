@@ -85,7 +85,6 @@ impl Message<Stop> for BeaconActor {
 
     async fn handle(&mut self, _msg: Stop, ctx: &mut Context<Self, Self::Reply>) -> Self::Reply {
         info!("shutting down beacon");
-        // todo: gracefully stop other actors
         ctx.stop();
     }
 }

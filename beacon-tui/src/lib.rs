@@ -24,18 +24,16 @@ impl<T> From<SendError<T>> for TuiError {
     }
 }
 
+/// Stop the server.
+pub struct Stop;
+
 pub struct TuiActor<A: Message<Stop>> {
     terminal: ratatui::DefaultTerminal,
     widget: HomeWidget,
     supervisor: ActorRef<A>,
 }
 
-/// Message to poll for events and redraw the TUI.
-struct Poll;
-
-/// Message to stop the server.
-pub struct Stop;
-
+/// Prepare the TUI to read logs.
 pub fn register() -> Result<(), TuiError> {
     tui_logger::init_logger(LevelFilter::Debug)?;
     tui_logger::set_default_level(LevelFilter::Info);
@@ -75,10 +73,14 @@ impl<A: Message<Stop>> Actor for TuiActor<A> {
     }
 }
 
-impl<A: Message<Stop>> Message<Poll> for TuiActor<A> {
-    type Reply = Result<(), TuiError>;
-
-    async fn handle(&mut self, _msg: Poll, ctx: &mut Context<Self, Self::Reply>) -> Self::Reply {
+#[messages]
+impl<A: Message<Stop>> TuiActor<A> {
+    /// Poll for events and redraw the TUI.
+    #[message(ctx)]
+    pub async fn poll(
+        &mut self,
+        ctx: &mut Context<Self, Result<(), TuiError>>,
+    ) -> Result<(), TuiError> {
         // draw
         self.terminal
             .draw(|frame| frame.render_widget(&self.widget, frame.area()))?;

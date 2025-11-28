@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use beacon_java::GetPlayerCount;
+use beacon_java::GetOnline;
 
 use crate::{
     QueryActor, QueryError,
@@ -50,7 +50,7 @@ impl QueryActor {
 
                 // get the current number of players from the Java server
                 let num_players =
-                    CString::new(self.java.ask(GetPlayerCount).await.unwrap_or(0).to_string())?;
+                    CString::new(self.java.ask(GetOnline).await.unwrap_or(0).to_string())?;
 
                 if full {
                     QueryResponse::FullStat {

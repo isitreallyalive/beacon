@@ -8,7 +8,7 @@ use beacon::BeaconError;
 use beacon_config::{Config, ConfigError};
 use kameo::prelude::*;
 use notify::{
-    EventKind, Watcher,
+    EventKind, Watcher as _,
     event::{ModifyKind, RenameMode},
 };
 
@@ -41,7 +41,7 @@ impl BeaconConfig {
                     && let Ok(path) = path.read()
                     && event.paths.contains(&path)
                 {
-                    let _ = actor.tell(WatcherEvent(event)).try_send();
+                    let _ = actor.tell(Watcher { event }).try_send();
                 }
             })?
         };
@@ -64,24 +64,10 @@ impl BeaconConfig {
     }
 }
 
-impl std::ops::Deref for BeaconConfig {
-    type Target = Config;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}
-
-struct WatcherEvent(notify::Event);
-
-impl Message<WatcherEvent> for BeaconActor {
-    type Reply = Result<(), BeaconError>;
-
-    async fn handle(
-        &mut self,
-        WatcherEvent(event): WatcherEvent,
-        _: &mut Context<Self, Self::Reply>,
-    ) -> Self::Reply {
+#[messages]
+impl BeaconActor {
+    #[message]
+    async fn watcher(&mut self, event: notify::Event) -> Result<(), BeaconError> {
         match event.kind {
             // config was created/modified, reload
             EventKind::Modify(ModifyKind::Data(_)) | EventKind::Create(_) => {
@@ -138,5 +124,13 @@ impl Message<WatcherEvent> for BeaconActor {
         }
 
         Ok(())
+    }
+}
+
+impl std::ops::Deref for BeaconConfig {
+    type Target = Config;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
     }
 }

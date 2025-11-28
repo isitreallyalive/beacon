@@ -39,10 +39,6 @@ pub enum QueryError {
     Io(#[from] std::io::Error),
 }
 
-/// Message to clear stored challenge tokens.
-#[derive(Clone)]
-struct ClearTokens;
-
 pub struct QueryActor {
     sock: UdpSocket,
     stats: StatsCache,
@@ -92,6 +88,19 @@ impl Actor for QueryActor {
     }
 }
 
+#[messages]
+impl QueryActor {
+    /// Clear all stored challenge tokens.
+    #[message]
+    fn clear_tokens(&mut self) {
+        let size = self.tokens.len();
+        if size > 0 {
+            self.tokens.clear();
+            debug!("cleared {size} challenge tokens");
+        }
+    }
+}
+
 impl Message<UdpMessage> for QueryActor {
     type Reply = ();
 
@@ -104,18 +113,6 @@ impl Message<UdpMessage> for QueryActor {
             return;
         };
         let _ = self.sock.send_to(&res, addr).await;
-    }
-}
-
-impl Message<ClearTokens> for QueryActor {
-    type Reply = ();
-
-    async fn handle(&mut self, _: ClearTokens, _: &mut Context<Self, Self::Reply>) -> Self::Reply {
-        let size = self.tokens.len();
-        if size > 0 {
-            self.tokens.clear();
-            debug!("cleared {size} challenge tokens");
-        }
     }
 }
 

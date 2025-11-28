@@ -30,8 +30,9 @@ impl Actor for JavaActor {
 
 #[messages]
 impl JavaActor {
+    /// Get the current player count.
     #[message]
-    pub fn get_player_count(&self) -> usize {
+    pub fn get_online(&self) -> usize {
         self.connections.len()
     }
 }
