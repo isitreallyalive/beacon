@@ -1,15 +1,14 @@
-use std::cell::LazyCell;
-use std::env;
+use std::sync::LazyLock;
 
 use log::Level;
 use ratatui::prelude::*;
 use tui_logger::{ExtLogRecord, LogFormatter};
 
 const DEFAULT_TARGET: &str = "beacon";
-const MAX_TARGET_LEN: LazyCell<usize> = LazyCell::new(|| {
-    env::var("MAX_TARGET_LEN")
-        .ok()
-        .and_then(|v| v.parse().ok())
+
+static MAX_TARGET_LEN: LazyLock<usize> = LazyLock::new(|| {
+    std::env!("MAX_TARGET_LEN")
+        .parse()
         .unwrap_or(DEFAULT_TARGET.len())
 });
 
@@ -54,7 +53,7 @@ impl LogFormatter for Formatter {
             " ".into(),
             timestamp,
             "  ".into(),
-            get_target(evt).gray().into(),
+            get_target(evt).gray(),
             "  ".into(),
             message,
         ])]

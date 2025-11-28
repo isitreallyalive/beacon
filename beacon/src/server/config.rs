@@ -37,12 +37,11 @@ impl BeaconConfig {
             let path = path.clone();
             notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
                 // only send events for the config file
-                if let Ok(event) = res {
-                    if let Ok(path) = path.read()
-                        && event.paths.contains(&path)
-                    {
-                        let _ = actor.tell(WatcherEvent(event)).try_send();
-                    }
+                if let Ok(event) = res
+                    && let Ok(path) = path.read()
+                    && event.paths.contains(&path)
+                {
+                    let _ = actor.tell(WatcherEvent(event)).try_send();
                 }
             })?
         };
@@ -51,7 +50,7 @@ impl BeaconConfig {
         let parent = path
             .read()?
             .parent()
-            .ok_or(BeaconError::Other("invalid config path".into()))?
+            .ok_or(BeaconError::Other("invalid config path"))?
             .to_path_buf();
 
         watcher.watch(&parent, notify::RecursiveMode::Recursive)?;

@@ -17,6 +17,7 @@ pub(crate) struct BeaconActor {
 
     /// Scheduler for managing tasks on an interval.
     scheduler: ActorRef<Scheduler>,
+    #[allow(dead_code)]
     tui: ActorRef<TuiActor<Self>>,
     query: Option<ActorRef<QueryActor>>,
 }

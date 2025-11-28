@@ -82,9 +82,8 @@ impl Actor for QueryActor {
         _: WeakActorRef<Self>,
         reason: ActorStopReason,
     ) -> Result<(), Self::Error> {
-        match reason {
-            ActorStopReason::Killed => info!("query stopped"),
-            _ => {}
+        if let ActorStopReason::Killed = reason {
+            info!("query stopped")
         }
         Ok(())
     }

@@ -8,16 +8,14 @@ fn main() {
     let mut max_len = 0;
     for package in metadata.packages {
         // only consider workspace members
-        if metadata.workspace_members.contains(&package.id) {
-            if has_tracing_dep(&package) {
-                let len = package.name.trim_start_matches("beacon-").len();
-                if len > max_len {
-                    max_len = len;
-                    println!(
-                        "cargo:warning=New max target length: {} (from package {})",
-                        max_len, package.name
-                    );
-                }
+        if metadata.workspace_members.contains(&package.id) && has_tracing_dep(&package) {
+            let len = package.name.trim_start_matches("beacon-").len();
+            if len > max_len {
+                max_len = len;
+                println!(
+                    "cargo:warning=New max target length: {} (from package {})",
+                    max_len, package.name
+                );
             }
         }
     }

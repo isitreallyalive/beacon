@@ -4,9 +4,9 @@ use tui_logger::TuiLoggerWidget;
 use crate::format::Formatter;
 
 #[derive(Default)]
-pub struct TuiWidget;
+pub struct HomeWidget;
 
-impl Widget for &TuiWidget {
+impl Widget for &HomeWidget {
     fn render(self, area: Rect, buf: &mut Buffer)
     where
         Self: Sized,

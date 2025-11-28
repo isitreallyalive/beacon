@@ -2,11 +2,11 @@ use kameo::prelude::*;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tui_logger::{LevelFilter, TuiTracingSubscriberLayer};
 
-use crate::draw::TuiWidget;
+use crate::home::HomeWidget;
 
-mod draw;
 mod event;
 mod format;
+mod home;
 
 #[derive(Debug, thiserror::Error)]
 pub enum TuiError {
@@ -26,7 +26,7 @@ impl<T> From<SendError<T>> for TuiError {
 
 pub struct TuiActor<A: Message<Stop>> {
     terminal: ratatui::DefaultTerminal,
-    widget: TuiWidget,
+    widget: HomeWidget,
     supervisor: ActorRef<A>,
 }
 
@@ -54,7 +54,7 @@ impl<A: Message<Stop>> Actor for TuiActor<A> {
         actor_ref: ActorRef<Self>,
     ) -> Result<Self, Self::Error> {
         let terminal = ratatui::init();
-        let widget = TuiWidget::default();
+        let widget = HomeWidget;
         let _ = actor_ref.tell(Poll).await;
 
         Ok(Self {
@@ -84,10 +84,10 @@ impl<A: Message<Stop>> Message<Poll> for TuiActor<A> {
             .draw(|frame| frame.render_widget(&self.widget, frame.area()))?;
 
         // process events
-        if crossterm::event::poll(std::time::Duration::from_millis(100))? {
-            if let Ok(event) = crossterm::event::read() {
-                ctx.actor_ref().tell(event).await?;
-            }
+        if crossterm::event::poll(std::time::Duration::from_millis(100))?
+            && let Ok(event) = crossterm::event::read()
+        {
+            ctx.actor_ref().tell(event).await?;
         }
 
         // do it again
