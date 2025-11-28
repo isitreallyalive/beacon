@@ -31,7 +31,7 @@ impl Actor for BeaconActor {
     ) -> Result<Self, Self::Error> {
         let config = BeaconConfig::new(config_path, actor_ref.clone())?;
         let scheduler = Scheduler::spawn_default();
-        let tui = TuiActor::spawn(actor_ref);
+        let tui = TuiActor::spawn_with_mailbox(actor_ref, mailbox::unbounded());
 
         // sync with config
         let mut actor = Self {

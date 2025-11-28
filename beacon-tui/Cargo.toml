@@ -6,5 +6,12 @@ edition.workspace = true
 [dependencies]
 crossterm.workspace = true
 kameo.workspace = true
+log.workspace = true
+pastey.workspace = true
 ratatui.workspace = true
 thiserror.workspace = true
+tracing-subscriber.workspace = true
+tui-logger = { workspace = true, features = ["tracing-support"] }
+
+[build-dependencies]
+cargo_metadata.workspace = true

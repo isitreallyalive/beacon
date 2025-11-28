@@ -68,7 +68,7 @@ impl Actor for QueryActor {
             ))
             .await;
 
-        info!("query listening on {}", sock.local_addr()?);
+        info!("listening on {}", sock.local_addr()?);
 
         Ok(Self {
             sock,
@@ -137,11 +137,7 @@ impl Message<Config> for QueryActor {
             };
             self.sock = sock;
 
-            info!(
-                "query address changed: {:?} -> {:?}",
-                old_addr.unwrap(),
-                new_addr
-            );
+            info!("address changed: {:?} -> {:?}", old_addr.unwrap(), new_addr);
         }
     }
 }

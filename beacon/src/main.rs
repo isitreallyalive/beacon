@@ -10,9 +10,8 @@ mod server;
 
 #[tokio::main]
 async fn main() -> Result<(), BeaconError> {
-    // run
+    beacon_tui::register()?;
     let server = BeaconActor::spawn("beacon.toml".into());
     server.wait_for_shutdown().await;
-
     Ok(())
 }

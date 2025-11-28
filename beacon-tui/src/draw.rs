@@ -1,12 +1,18 @@
-use ratatui::{
-    prelude::*,
-    widgets::{Block, Borders, Paragraph},
-};
+use ratatui::prelude::*;
+use tui_logger::TuiLoggerWidget;
 
-pub(crate) fn draw(frame: &mut Frame) {
-    frame.render_widget(
-        Paragraph::new("Press 'q' to quit")
-            .block(Block::default().title("Beacon").borders(Borders::ALL)),
-        frame.area(),
-    );
+use crate::format::Formatter;
+
+#[derive(Default)]
+pub struct TuiWidget;
+
+impl Widget for &TuiWidget {
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized,
+    {
+        TuiLoggerWidget::default()
+            .formatter(Box::new(Formatter))
+            .render(area, buf);
+    }
 }

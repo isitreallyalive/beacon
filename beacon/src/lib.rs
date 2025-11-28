@@ -9,6 +9,8 @@ pub enum BeaconError {
 
     #[error("config error: {0}")]
     Config(#[from] beacon_config::ConfigError),
+    #[error("tui error: {0}")]
+    Tui(#[from] beacon_tui::TuiError),
 
     #[error("poison error: {0}")]
     Poison(String),
