@@ -7,13 +7,13 @@ edition.workspace = true
 beacon-config.workspace = true
 beacon-data.workspace = true
 beacon-query.workspace = true
+beacon-tui.workspace = true
 kameo.workspace = true
 kameo_actors.workspace = true
 notify.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 tracing.workspace = true
-tracing-subscriber.workspace = true
 
 [dev-dependencies]
 cargo-husky = { workspace = true, features = ["user-hooks"] }

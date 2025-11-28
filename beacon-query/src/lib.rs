@@ -4,10 +4,10 @@
 
 use std::{collections::HashMap, net::SocketAddr, time::Duration};
 
-use beacon_config::{Config, ConfigUpdate};
+use beacon_config::Config;
 use deku::DekuContainerWrite;
 use kameo::{message::StreamMessage, prelude::*};
-use kameo_actors::scheduler::{Scheduler, SetInterval};
+use kameo_actors::scheduler::{Scheduler, SetTimeout};
 
 use crate::{
     sock::{UdpMessage, UdpSocket},
@@ -61,7 +61,7 @@ impl Actor for QueryActor {
 
         // clear tokens periodically
         let _ = scheduler
-            .tell(SetInterval::new(
+            .tell(SetTimeout::new(
                 actor.downgrade(),
                 CLEAR_INTERVAL,
                 ClearTokens,
@@ -117,12 +117,12 @@ impl Message<ClearTokens> for QueryActor {
     }
 }
 
-impl Message<ConfigUpdate> for QueryActor {
+impl Message<Config> for QueryActor {
     type Reply = ();
 
     async fn handle(
         &mut self,
-        ConfigUpdate(config): ConfigUpdate,
+        config: Config,
         ctx: &mut Context<Self, Self::Reply>,
     ) -> Self::Reply {
         self.stats.update(&config);

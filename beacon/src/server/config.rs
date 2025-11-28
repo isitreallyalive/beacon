@@ -5,7 +5,7 @@ use std::{
 };
 
 use beacon::BeaconError;
-use beacon_config::{Config, ConfigError, ConfigUpdate};
+use beacon_config::{Config, ConfigError};
 use kameo::prelude::*;
 use notify::{
     EventKind, Watcher,
@@ -116,7 +116,7 @@ impl Message<WatcherEvent> for BeaconActor {
                     tokio::time::sleep(DEBOUNCE).await;
                     if let Some(query) = &self.query {
                         query
-                            .tell(ConfigUpdate(self.config.clone()))
+                            .tell(self.config.clone())
                             .await
                             .map_err(ConfigError::from)?;
                     }

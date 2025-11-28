@@ -1,0 +1,10 @@
+[package]
+name = "beacon-tui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+crossterm.workspace = true
+kameo.workspace = true
+ratatui.workspace = true
+thiserror.workspace = true

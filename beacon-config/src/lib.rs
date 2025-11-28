@@ -9,9 +9,6 @@ extern crate tracing;
 
 mod def;
 
-/// Message containing a config update
-pub struct ConfigUpdate(pub Config);
-
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
     pub server: ServerConfig,
@@ -42,7 +39,7 @@ pub enum ConfigError {
     #[error("write error: {0}")]
     Write(#[from] toml::ser::Error),
     #[error("update error: {0}")]
-    Update(#[from] kameo::error::SendError<ConfigUpdate>),
+    Update(#[from] kameo::error::SendError<Config>),
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 }

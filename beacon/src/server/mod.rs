@@ -1,7 +1,9 @@
-use std::path::PathBuf;
+use std::{env::consts, path::PathBuf};
 
 use beacon::BeaconError;
+use beacon_data::BEACON_VERSION;
 use beacon_query::QueryActor;
+use beacon_tui::{Stop, TuiActor};
 use kameo::prelude::*;
 use kameo_actors::scheduler::Scheduler;
 
@@ -15,6 +17,7 @@ pub(crate) struct BeaconActor {
 
     /// Scheduler for managing tasks on an interval.
     scheduler: ActorRef<Scheduler>,
+    tui: ActorRef<TuiActor<Self>>,
     query: Option<ActorRef<QueryActor>>,
 }
 
@@ -26,16 +29,30 @@ impl Actor for BeaconActor {
         config_path: Self::Args,
         actor_ref: ActorRef<Self>,
     ) -> Result<Self, Self::Error> {
-        let config = BeaconConfig::new(config_path, actor_ref)?;
+        let config = BeaconConfig::new(config_path, actor_ref.clone())?;
         let scheduler = Scheduler::spawn_default();
+        let tui = TuiActor::spawn(actor_ref);
 
         // sync with config
         let mut actor = Self {
-            scheduler,
             config,
+            scheduler,
+            tui,
             query: None,
         };
         actor.sync();
+
+        info!("starting beacon v{BEACON_VERSION}");
+        warn!("beacon is in early development. expect bugs and incomplete features.");
+        debug!(
+            family = consts::FAMILY,
+            os = consts::OS,
+            arch = consts::ARCH,
+            protocol = beacon_data::PROTOCOL_VERSION,
+            supports = ?beacon_data::SUPPORTED_VERSIONS,
+            debug = cfg!(debug_assertions),
+            "build info"
+        );
 
         Ok(actor)
     }
@@ -56,5 +73,15 @@ impl BeaconActor {
             }
             _ => {}
         }
+    }
+}
+
+impl Message<Stop> for BeaconActor {
+    type Reply = ();
+
+    async fn handle(&mut self, _msg: Stop, ctx: &mut Context<Self, Self::Reply>) -> Self::Reply {
+        info!("shutting down beacon");
+        // todo: gracefully stop other actors
+        ctx.stop();
     }
 }
