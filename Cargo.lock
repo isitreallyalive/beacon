@@ -23,7 +23,9 @@ dependencies = [
 name = "beacon-config"
 version = "0.0.0"
 dependencies = [
+ "kameo",
  "serde",
+ "thiserror",
  "toml",
  "tracing",
 ]

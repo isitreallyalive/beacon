@@ -43,19 +43,18 @@ impl Actor for BeaconActor {
 
 impl BeaconActor {
     fn sync(&mut self) {
-        // query
-        self.query = if let Some(query) = &self.query
-            && !self.config.query.enable
-        {
-            query.kill();
-            None
-        } else if self.config.query.enable {
-            Some(QueryActor::spawn((
-                self.config.clone(),
-                self.scheduler.clone(),
-            )))
-        } else {
-            None
-        };
+        match &self.query {
+            Some(query) if !self.config.query.enable => {
+                query.kill();
+                self.query = None;
+            }
+            None if self.config.query.enable => {
+                self.query = Some(QueryActor::spawn((
+                    self.config.clone(),
+                    self.scheduler.clone(),
+                )));
+            }
+            _ => {}
+        }
     }
 }

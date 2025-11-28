@@ -146,6 +146,7 @@ define! {
         #[serde(skip_serializing)]
         ip: Ipv4Addr = ALL_INTERFACES,
         /// The UDP port the query listener listens on.
+        #[serde(skip_serializing)]
         port: u16 = 25565, // query.port
     }
 }

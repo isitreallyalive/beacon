@@ -8,3 +8,4 @@ name = "world"
 
 [query]
 enable = true
+port = 25564

@@ -1,12 +1,16 @@
 use std::{
     path::PathBuf,
+    sync::{Arc, RwLock},
     time::{Duration, Instant},
 };
 
 use beacon::BeaconError;
-use beacon_config::{Config, ConfigUpdate};
+use beacon_config::{Config, ConfigError, ConfigUpdate};
 use kameo::prelude::*;
-use notify::Watcher;
+use notify::{
+    EventKind, Watcher,
+    event::{ModifyKind, RenameMode},
+};
 
 use crate::server::BeaconActor;
 
@@ -16,48 +20,47 @@ const DEBOUNCE: Duration = Duration::from_millis(100);
 /// Manages configuration.
 pub(crate) struct BeaconConfig {
     data: Config,
-    path: PathBuf,
+    path: Arc<RwLock<PathBuf>>,
     #[allow(dead_code)]
     watcher: notify::RecommendedWatcher,
+    last_modify: Instant,
 }
 
 impl BeaconConfig {
     pub fn new(path: PathBuf, actor: ActorRef<BeaconActor>) -> Result<Self, BeaconError> {
         // load initial data
-        let data = Config::read(&path);
+        let data = Config::read(&path)?;
 
         // start watcher
-        let mut watcher =
+        let path = Arc::new(RwLock::new(path.canonicalize()?));
+        let mut watcher = {
+            let path = path.clone();
             notify::recommended_watcher(move |res: Result<notify::Event, notify::Error>| {
-                static mut LAST: Option<Instant> = None;
-
-                let Ok(event) = res else {
-                    return;
-                };
-                if matches!(event.kind, notify::EventKind::Modify(_)) {
-                    // deduplicate events
-                    let now = Instant::now();
-                    unsafe {
-                        if let Some(last) = LAST
-                            && now.duration_since(last) < DEDUP
-                        {
-                            return;
-                        }
-                        LAST = Some(now);
+                // only send events for the config file
+                if let Ok(event) = res {
+                    if let Ok(path) = path.read()
+                        && event.paths.contains(&path)
+                    {
+                        let _ = actor.tell(WatcherEvent(event)).try_send();
                     }
-
-                    // send the event after debouncing
-                    std::thread::sleep(DEBOUNCE);
-                    let _ = actor.tell(ReloadConfig).try_send();
                 }
-            })?;
+            })?
+        };
 
-        watcher.watch(&path, notify::RecursiveMode::NonRecursive)?;
+        // resolve parent directory
+        let parent = path
+            .read()?
+            .parent()
+            .ok_or(BeaconError::Other("invalid config path".into()))?
+            .to_path_buf();
+
+        watcher.watch(&parent, notify::RecursiveMode::Recursive)?;
 
         Ok(Self {
             data,
             path,
             watcher,
+            last_modify: Instant::now(),
         })
     }
 }
@@ -70,24 +73,63 @@ impl std::ops::Deref for BeaconConfig {
     }
 }
 
-/// Message to trigger a config reload
-struct ReloadConfig;
+struct WatcherEvent(notify::Event);
 
-impl Message<ReloadConfig> for BeaconActor {
+impl Message<WatcherEvent> for BeaconActor {
     type Reply = Result<(), BeaconError>;
 
-    async fn handle(&mut self, _: ReloadConfig, _: &mut Context<Self, Self::Reply>) -> Self::Reply {
-        let new_config = Config::read(&self.config.path);
+    async fn handle(
+        &mut self,
+        WatcherEvent(event): WatcherEvent,
+        _: &mut Context<Self, Self::Reply>,
+    ) -> Self::Reply {
+        match event.kind {
+            // config was created/modified, reload
+            EventKind::Modify(ModifyKind::Data(_)) | EventKind::Create(_) => {
+                // dedup modify events
+                if matches!(event.kind, EventKind::Modify(_)) {
+                    let now = Instant::now();
+                    if now.duration_since(self.config.last_modify) < DEDUP {
+                        return Ok(());
+                    }
+                    self.config.last_modify = now;
+                }
 
-        if new_config != self.config.data {
-            // sync actors
-            self.config.data = new_config;
-            self.sync();
+                let new = {
+                    let path = self.config.path.read()?;
+                    match Config::read(&path) {
+                        Ok(config) => config,
+                        Err(err) => {
+                            error!("failed to parse config, keeping old.\n{err}");
+                            return Ok(());
+                        }
+                    }
+                };
 
-            // send out config updates
-            if let Some(query) = &self.query {
-                query.tell(ConfigUpdate(self.config.clone())).await?;
+                if new != self.config.data {
+                    // sync actors
+                    self.config.data = new;
+                    self.sync();
+
+                    // send out config updates
+                    // send the event after debouncing
+                    tokio::time::sleep(DEBOUNCE).await;
+                    if let Some(query) = &self.query {
+                        query
+                            .tell(ConfigUpdate(self.config.clone()))
+                            .await
+                            .map_err(ConfigError::from)?;
+                    }
+                }
             }
+            // config file was renamed, update path
+            EventKind::Modify(ModifyKind::Name(RenameMode::Both)) => {
+                if let Some(new) = event.paths.last() {
+                    let mut path = self.config.path.write()?;
+                    *path = new.clone();
+                }
+            }
+            _ => {}
         }
 
         Ok(())

@@ -35,31 +35,33 @@ macro_rules! load {
     };
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    #[error("read error: {0}")]
+    Read(#[from] toml::de::Error),
+    #[error("write error: {0}")]
+    Write(#[from] toml::ser::Error),
+    #[error("update error: {0}")]
+    Update(#[from] kameo::error::SendError<ConfigUpdate>),
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+}
+
 impl Config {
+    /// Create a (default) config file at the given path
+    fn create(path: &PathBuf) -> Result<Self, ConfigError> {
+        let config = Self::default();
+        let contents = toml::to_string_pretty(&config)?;
+        fs::write(path, contents)?;
+        Ok(config)
+    }
+
     /// Read the config from the given path, creating it with defaults if it doesn't exist
-    pub fn read(path: &PathBuf) -> Self {
-        // read the file contents
+    pub fn read(path: &PathBuf) -> Result<Self, ConfigError> {
         let value: toml::Value = match fs::read_to_string(path) {
-            Ok(contents) => match toml::from_str(&contents) {
-                Ok(v) => v,
-                Err(_) => {
-                    warn!("failed to parse config file, using defaults");
-                    return Self::default();
-                }
-            },
-            Err(_) => {
-                // if the file doesn't exist, create one with defaults
-                let default = Self::default();
-                match toml::to_string_pretty(&default) {
-                    Ok(contents) => {
-                        let _ = fs::write(path, contents);
-                    }
-                    Err(e) => {
-                        warn!("failed to write default config file: {}", e);
-                    }
-                }
-                return default;
-            }
+            Ok(contents) if contents.is_empty() => return Self::create(path),
+            Ok(contents) => toml::from_str(&contents)?,
+            Err(_) => return Self::create(path),
         };
 
         // deserialize each section individually, falling back to defaults
@@ -67,10 +69,10 @@ impl Config {
         load!(value, world(WorldConfig));
         load!(value, query(QueryConfig));
 
-        Self {
+        Ok(Self {
             server,
             world,
             query,
-        }
+        })
     }
 }
