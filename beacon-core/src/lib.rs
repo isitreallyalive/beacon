@@ -5,6 +5,8 @@ use std::{
     sync::Arc,
 };
 
+use beacon_codec::decode::Decode;
+use beacon_net::RawPacket;
 use miette::{IntoDiagnostic, Result};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::sync::CancellationToken;
@@ -50,7 +52,9 @@ impl BeaconServer {
 
         loop {
             tokio::select! {
-                Ok((sock, addr)) = self.listener.accept() => handle_connection(sock, addr).await,
+                Ok((sock, addr)) = self.listener.accept() => {
+                    tokio::spawn(handle_connection(sock, addr));
+                },
                 _ = self.state.cancel_token.cancelled() => break,
             }
         }
@@ -62,4 +66,18 @@ impl BeaconServer {
     }
 }
 
-async fn handle_connection(sock: TcpStream, addr: SocketAddr) {}
+async fn handle_connection(sock: TcpStream, addr: SocketAddr) {
+    debug!(addr = %addr, "new connection established");
+
+    let (mut reader, writer) = sock.into_split();
+
+    loop {
+        let Ok(packet) = RawPacket::decode(&mut reader).await else {
+            break;
+        };
+
+        println!("{:?}", packet);
+    }
+
+    debug!(addr = %addr, "connection closed");
+}

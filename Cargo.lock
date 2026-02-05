@@ -53,6 +53,8 @@ dependencies = [
 name = "beacon-core"
 version = "0.0.0"
 dependencies = [
+ "beacon-codec",
+ "beacon-net",
  "miette",
  "tokio",
  "tokio-util",
@@ -64,6 +66,15 @@ name = "beacon-data"
 version = "0.0.0"
 dependencies = [
  "derive_more",
+]
+
+[[package]]
+name = "beacon-net"
+version = "0.0.0"
+dependencies = [
+ "beacon-codec",
+ "bytes",
+ "tokio",
 ]
 
 [[package]]
