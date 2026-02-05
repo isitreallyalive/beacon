@@ -1,5 +1,12 @@
 [workspace]
-members = ["beacon", "beacon-codec", "beacon-core", "beacon-data", "beacon-net"]
+members = [
+    "beacon",
+    "beacon-codec",
+    "beacon-config",
+    "beacon-core",
+    "beacon-data",
+    "beacon-net",
+]
 resolver = "3"
 
 [workspace.package]
@@ -7,14 +14,17 @@ version = "0.0.0"
 edition = "2024"
 
 [workspace.dependencies]
-beacon-codec = { version = "0.0.0", path = "beacon-codec" }
+beacon-codec = { path = "beacon-codec" }
+beacon-config = { version = "0.0.0", path = "beacon-config" }
 beacon-core = { path = "beacon-core" }
 beacon-data = { path = "beacon-data" }
-beacon-net = { version = "0.0.0", path = "beacon-net" }
+beacon-net = { path = "beacon-net" }
 bytes = "1.11.1"
 cargo-husky = { version = "1.5.0", default-features = false }
 derive_more = "2.1.1"
+figment = "0.10.19"
 miette = "7.6.0"
+serde = "1.0.228"
 thiserror = "2.0.18"
 tokio = "1.49.0"
 tokio-util = "0.7.18"

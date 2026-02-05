@@ -1,0 +1,11 @@
+[package]
+name = "beacon-config"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+figment = { workspace = true, features = ["toml"] }
+serde = { workspace = true, features = ["derive"] }
+
+[lints]
+workspace = true

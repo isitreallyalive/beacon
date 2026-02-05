@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 beacon-codec.workspace = true
+beacon-config.workspace = true
 beacon-net.workspace = true
 miette.workspace = true
 tokio = { workspace = true, features = ["net", "signal"] }

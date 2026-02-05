@@ -6,6 +6,7 @@ use std::{
 };
 
 use beacon_codec::decode::Decode;
+use beacon_config::Config;
 use beacon_net::RawPacket;
 use miette::{IntoDiagnostic, Result};
 use tokio::net::{TcpListener, TcpStream};
@@ -28,10 +29,12 @@ pub struct ServerState {
 
 impl BeaconServer {
     /// Create a new instance of beacon.
-    pub async fn new() -> Result<Self> {
-        let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 25565))
-            .await
-            .into_diagnostic()?;
+    pub async fn new(config: Config) -> Result<Self> {
+        let addr: SocketAddr = (config.host, config.port).into();
+        let listener = TcpListener::bind(addr).await.into_diagnostic()?;
+
+        info!("server listening on {}", addr);
+
         Ok(Self {
             listener,
             state: Arc::new(ServerState::default()),
@@ -68,7 +71,6 @@ impl BeaconServer {
 
 async fn handle_connection(sock: TcpStream, addr: SocketAddr) {
     debug!(addr = %addr, "new connection established");
-
     let (mut reader, writer) = sock.into_split();
 
     loop {

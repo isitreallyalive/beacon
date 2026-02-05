@@ -4,8 +4,9 @@
 
 use std::env::consts;
 
+use beacon_config::Config;
 use beacon_core::BeaconServer;
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use tracing_subscriber::{fmt::time::ChronoLocal, layer::SubscriberExt, util::SubscriberInitExt};
 
 #[macro_use]
@@ -44,6 +45,7 @@ async fn main() -> Result<()> {
         ))
     );
 
-    let server = BeaconServer::new().await?;
+    let config = Config::load("config.toml").into_diagnostic()?;
+    let server = BeaconServer::new(config).await?;
     server.start().await
 }
