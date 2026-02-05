@@ -8,3 +8,10 @@ edition = "2024"
 
 [workspace.lints.rust]
 missing_docs = "warn"
+
+[workspace.dependencies]
+beacon-core = { path = "beacon-core" }
+cargo-husky = { version = "1.5.0", default-features = false }
+miette = "7.6.0"
+tokio = "1.49.0"
+tokio-util = "0.7.18"

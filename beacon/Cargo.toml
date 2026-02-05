@@ -4,9 +4,12 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-beacon-core = { path = "../beacon-core" }
-miette = "7.6.0"
-tokio = { version = "1.49.0", features = ["rt-multi-thread", "macros"] }
+beacon-core.workspace = true
+miette.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+
+[dev-dependencies]
+cargo-husky = { workspace = true, features = ["user-hooks"] }
 
 [lints]
 workspace = true

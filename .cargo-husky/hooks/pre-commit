@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# only run cargo autoinherit if installed
+if cargo install --list | grep -q "autoinherit"; then
+    cargo autoinherit --prefer-simple-dotted
+fi
+
+# only run cargo sort if installed
+if cargo install --list | grep -q "sort"; then
+    cargo sort -w
+fi
+
+cargo fmt
+
+git add --update
+git add Cargo.toml Cargo.lock
