@@ -9,6 +9,9 @@ use miette::{IntoDiagnostic, Result};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::sync::CancellationToken;
 
+#[macro_use]
+extern crate tracing;
+
 /// The Minecraft server you'll love.
 pub struct BeaconServer {
     listener: TcpListener,
@@ -53,7 +56,7 @@ impl BeaconServer {
         }
 
         // shutdown
-        println!("shutting down...");
+        info!("shutting down...");
 
         Ok(())
     }

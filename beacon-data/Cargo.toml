@@ -1,0 +1,10 @@
+[package]
+name = "beacon-data"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+derive_more = { workspace = true, features = ["display"] }
+
+[lints]
+workspace = true
