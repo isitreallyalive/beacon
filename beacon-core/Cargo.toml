@@ -1,0 +1,12 @@
+[package]
+name = "beacon-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+miette = "7.6.0"
+tokio = { version = "1.49.0", features = ["net", "signal"] }
+tokio-util = "0.7.18"
+
+[lints]
+workspace = true

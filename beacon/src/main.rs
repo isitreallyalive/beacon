@@ -1,7 +1,12 @@
 //! # beacon
-//! 
+//!
 //! The Minecraft server that you'll love.
 
-fn main() {
-    println!("Hello, world!");
+use beacon_core::BeaconServer;
+use miette::Result;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let server = BeaconServer::new().await?;
+    server.start().await
 }
