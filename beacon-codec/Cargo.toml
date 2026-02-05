@@ -1,0 +1,13 @@
+[package]
+name = "beacon-codec"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+derive_more = { workspace = true, features = ["deref", "display", "from"] }
+miette.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["io-util"] }
+
+[lints]
+workspace = true

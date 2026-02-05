@@ -55,7 +55,7 @@ impl BeaconServer {
             }
         }
 
-        // shutdown
+        // shutdown + cleanup
         info!("shutting down...");
 
         Ok(())
