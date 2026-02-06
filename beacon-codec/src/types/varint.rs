@@ -7,7 +7,7 @@ const CONTINUE: u8 = 0x80;
 
 /// Variable-length data encoding a [two's complement signed 32-bit integer](std::primitive::i32)
 #[derive(Clone, Copy, Debug, Deref, Display, From, LowerHex, PartialEq, UpperHex)]
-pub struct VarInt(i32);
+pub struct VarInt(pub i32);
 
 impl VarInt {
     /// Returns the size of the [VarInt] when encoded.

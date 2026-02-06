@@ -5,8 +5,8 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 /// A raw packet, before any processing is done.
 #[derive(Debug)]
 pub struct RawPacket {
-    id: VarInt,
-    data: Bytes,
+    pub id: VarInt,
+    pub data: Bytes,
 }
 
 impl Decode for RawPacket {

@@ -19,6 +19,8 @@ pub mod decode;
 pub mod types {
     pub use varint::VarInt;
 
+    mod number;
+    mod string;
     mod varint;
 }
 

@@ -3,7 +3,7 @@
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::decode::Decode;
-use beacon_net::packet::RawPacket;
+use beacon_net::{packet::RawPacket, server::Handshake};
 use bevy_ecs::prelude::*;
 use miette::{IntoDiagnostic, Result};
 use tokio::{
@@ -91,10 +91,12 @@ async fn handle_connection(sock: TcpStream, addr: SocketAddr) {
 
     loop {
         let Ok(packet) = RawPacket::decode(&mut reader).await else {
+            error!(addr = %addr, "failed to read packet");
             break;
         };
 
-        println!("{:?}", packet);
+        let handshake = Handshake::decode(&mut packet.data.as_ref()).await;
+        println!("{handshake:?}");
     }
 
     debug!(addr = %addr, "connection closed");
