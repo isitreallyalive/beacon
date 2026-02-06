@@ -3,6 +3,9 @@ name = "beacon"
 version.workspace = true
 edition.workspace = true
 
+[features]
+debug = ["beacon-core/debug"]
+
 [dependencies]
 beacon-config.workspace = true
 beacon-core.workspace = true

@@ -3,6 +3,9 @@ name = "beacon-core"
 version.workspace = true
 edition.workspace = true
 
+[features]
+debug = ["bevy_ecs/debug"]
+
 [dependencies]
 beacon-codec.workspace = true
 beacon-config.workspace = true

@@ -1,10 +1,6 @@
 //! # beacon-core
 
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
-    time::Duration,
-};
+use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::decode::Decode;
 use beacon_config::Config;
@@ -40,16 +36,17 @@ pub struct ServerState {
 
 impl BeaconServer {
     /// Create a new instance of beacon.
-    pub async fn new(config: Config) -> Result<Self> {
+    pub async fn new<P: AsRef<Path>>(config_path: P) -> Result<Self> {
+        // start ecs
+        let tick = tokio::time::interval(Duration::from_secs_f64(1. / TARGET_TPS));
+        let (mut world, mut schedule) = (World::new(), Schedule::default());
+        let config = beacon_config::register(&mut world, &mut schedule, config_path)?;
+        schedule.add_systems(print_config);
+
         // bind the server
         let addr: SocketAddr = (config.host, config.port).into();
         let listener = TcpListener::bind(addr).await.into_diagnostic()?;
         info!("server listening on {}", addr);
-
-        // start ecs
-        let tick = tokio::time::interval(Duration::from_secs_f64(1. / TARGET_TPS));
-        let (mut world, schedule) = (World::new(), Schedule::default());
-        world.insert_resource(config);
 
         Ok(Self {
             listener,
@@ -87,6 +84,12 @@ impl BeaconServer {
         info!("shutting down...");
 
         Ok(())
+    }
+}
+
+fn print_config(config: Res<Config>) {
+    if config.is_changed() {
+        println!("{:?}", config);
     }
 }
 
