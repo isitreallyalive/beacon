@@ -3,7 +3,7 @@
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::decode::Decode;
-use beacon_net::RawPacket;
+use beacon_net::packet::RawPacket;
 use bevy_ecs::prelude::*;
 use miette::{IntoDiagnostic, Result};
 use tokio::{

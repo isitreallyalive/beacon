@@ -5,6 +5,7 @@ members = [
     "beacon-config",
     "beacon-core",
     "beacon-data",
+    "beacon-macros",
     "beacon-net",
 ]
 resolver = "3"
@@ -18,16 +19,21 @@ beacon-codec = { path = "beacon-codec" }
 beacon-config = { version = "0.0.0", path = "beacon-config" }
 beacon-core = { path = "beacon-core" }
 beacon-data = { path = "beacon-data" }
+beacon-macros = { path = "beacon-macros" }
 beacon-net = { path = "beacon-net" }
 bevy_ecs = "0.18.0"
 bytes = "1.11.1"
 cargo-husky = { version = "1.5.0", default-features = false }
 crossbeam-channel = "0.5.15"
+darling = "0.23.0"
 derive_more = "2.1.1"
 figment = "0.10.19"
 miette = "7.6.0"
 notify = "8.2.0"
+quote = "1.0.44"
 serde = "1.0.228"
+serde_json = "1.0.149"
+syn = "2.0.114"
 thiserror = "2.0.18"
 tokio = "1.49.0"
 tokio-util = "0.7.18"

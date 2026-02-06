@@ -4,6 +4,8 @@
 //! - Traits for encoding and decoding data to and from a Minecraft client.
 //! - Implementations of these traits for various Minecraft data types (i.e. [VarInt])
 
+pub use crate::state::ProtocolState;
+
 #[macro_use]
 extern crate derive_more;
 
@@ -19,6 +21,8 @@ pub mod types {
 
     mod varint;
 }
+
+mod state;
 
 mod prelude {
     pub use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};

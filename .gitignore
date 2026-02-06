@@ -1,4 +1,6 @@
 target
+*ice*.txt
+
 beacon.toml
 .gitcraft
 .minecraft
