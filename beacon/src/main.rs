@@ -44,6 +44,6 @@ async fn main() -> Result<()> {
         ))
     );
 
-    let mut server = BeaconServer::new("config.toml").await?;
+    let mut server = BeaconServer::new("beacon.toml").await?;
     server.start().await
 }

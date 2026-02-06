@@ -3,7 +3,6 @@
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::decode::Decode;
-use beacon_config::Config;
 use beacon_net::RawPacket;
 use bevy_ecs::prelude::*;
 use miette::{IntoDiagnostic, Result};
@@ -40,11 +39,10 @@ impl BeaconServer {
         // start ecs
         let tick = tokio::time::interval(Duration::from_secs_f64(1. / TARGET_TPS));
         let (mut world, mut schedule) = (World::new(), Schedule::default());
-        let config = beacon_config::register(&mut world, &mut schedule, config_path)?;
-        schedule.add_systems(print_config);
+        let config = beacon_config::ecs(&mut world, &mut schedule, config_path)?;
 
         // bind the server
-        let addr: SocketAddr = (config.host, config.port).into();
+        let addr: SocketAddr = (config.server.ip, config.server.port).into();
         let listener = TcpListener::bind(addr).await.into_diagnostic()?;
         info!("server listening on {}", addr);
 
@@ -84,12 +82,6 @@ impl BeaconServer {
         info!("shutting down...");
 
         Ok(())
-    }
-}
-
-fn print_config(config: Res<Config>) {
-    if config.is_changed() {
-        println!("{:?}", config);
     }
 }
 

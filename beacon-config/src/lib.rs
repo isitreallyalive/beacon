@@ -2,22 +2,18 @@
 //!
 //! Contains all configuration structs, and hot-reload logic.
 
-use std::{net::Ipv4Addr, path::Path};
+use std::path::Path;
 
 use bevy_ecs::prelude::*;
-use figment::{
-    Figment,
-    providers::{Format, Toml},
-};
+
 use miette::Diagnostic;
-use serde::Deserialize;
 use thiserror::Error;
 
+pub use crate::config::Config;
 use crate::reload::ConfigManager;
 
+mod config;
 mod reload;
-
-const DEFAULT_CONFIG: &str = include_str!("../../assets/default-config.toml");
 
 /// Errors that can occur while managing configuration.
 #[derive(Debug, Error, Diagnostic)]
@@ -33,31 +29,8 @@ pub enum ConfigError {
     Read(#[from] figment::Error),
 }
 
-/// The configuration for the server.
-#[derive(Resource, Debug, Clone, Deserialize)]
-pub struct Config {
-    /// The host to bind to.
-    pub host: Ipv4Addr,
-    /// The port to bind to.
-    pub port: u16,
-}
-
-// todo: proper error handling for incorrect fields
-impl Config {
-    /// Load the configuration from a file, with defaults.
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
-        let config = Figment::new()
-            // load the default configuration
-            .merge(Toml::string(DEFAULT_CONFIG))
-            // override it with the user's configuration
-            .merge(Toml::file(path))
-            .extract()?;
-        Ok(config)
-    }
-}
-
 /// Add configuration to the ECS.
-pub fn register<P: AsRef<Path>>(
+pub fn ecs<P: AsRef<Path>>(
     world: &mut World,
     schedule: &mut Schedule,
     path: P,

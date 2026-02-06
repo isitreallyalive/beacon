@@ -1,0 +1,80 @@
+# wip design of beacon server configuration
+
+[server]
+ip = "0.0.0.0"
+port = 25565
+status = true
+motd = "A Beacon Server"
+max-players = 20
+
+# [[world]]
+# name = "world"
+# seed = EMPTY # random seed
+# type = "normal" # or "minecraft:normal", any resource locator
+# difficulty = "easy"
+
+# [query]
+# enable = false
+# port = 25565
+
+# [rcon]
+# enable = false
+# port = 25575
+# password = EMPTY
+
+# [management]
+# enable = false
+# ip = "localhost"
+# port = 0 # random port
+# secret = RANDOM
+
+# [management.tls]
+# enable = true
+# keystore = EMPTY # path
+# password = EMPTY # keystore password
+
+# accepts-transfers=false
+# allow-flight=false
+# broadcast-console-to-ops=true
+# broadcast-rcon-to-ops=true
+# bug-report-link=
+# enable-code-of-conduct=false
+# enable-jmx-monitoring=false
+# enforce-secure-profile=true
+# enforce-whitelist=false
+# entity-broadcast-range-percentage=100
+# force-gamemode=false
+# function-permission-level=2
+# gamemode=survival
+# generate-structures=true
+# generator-settings={}
+# hardcore=false
+# hide-online-players=false
+# initial-disabled-packs=
+# initial-enabled-packs=vanilla
+# log-ips=true
+# max-chained-neighbor-updates=1000000
+# max-tick-time=60000
+# max-world-size=29999984
+# network-compression-threshold=256
+# online-mode=true
+# op-permission-level=4
+# pause-when-empty-seconds=60
+# player-idle-timeout=0
+# prevent-proxy-connections=false
+# rate-limit=0
+# region-file-compression=deflate
+# require-resource-pack=false
+# resource-pack=
+# resource-pack-id=
+# resource-pack-prompt=
+# resource-pack-sha1=
+# simulation-distance=10
+# spawn-protection=16
+# status-heartbeat-interval=0
+# sync-chunk-writes=true
+# text-filtering-config=
+# text-filtering-version=0
+# use-native-transport=true
+# view-distance=10
+# white-list=false
