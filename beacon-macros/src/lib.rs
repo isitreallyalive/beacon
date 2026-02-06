@@ -33,7 +33,7 @@ struct PacketDirection {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct PacketId {
-    protocol_id: u8,
+    protocol_id: i32,
 }
 
 static PACKETS_JSON: LazyLock<Packets> = LazyLock::new(|| {
@@ -44,12 +44,12 @@ static PACKETS_JSON: LazyLock<Packets> = LazyLock::new(|| {
 #[derive(FromMeta)]
 #[darling(derive_syn_parse)]
 struct PacketArgs {
-    path: String,
+    resource: String,
     state: Ident,
 }
 
 /// Find the packet ID for a given path and state.
-fn find_packet(path: &str, state: Ident) -> (u8, bool) {
+fn find_packet(resource: &str, state: &Ident) -> (i32, bool) {
     let direction = match state.to_string().as_str() {
         "Handshake" => &PACKETS_JSON.handshake,
         "Status" => &PACKETS_JSON.status,
@@ -58,13 +58,13 @@ fn find_packet(path: &str, state: Ident) -> (u8, bool) {
         "Play" => &PACKETS_JSON.play,
         _ => panic!("invalid state: {}", state),
     };
-    let resource = format!("minecraft:{path}");
-    if let Some(pkt) = direction.clientbound.get(&resource) {
+    let locator = format!("minecraft:{resource}");
+    if let Some(pkt) = direction.clientbound.get(&locator) {
         (pkt.protocol_id, true)
-    } else if let Some(pkt) = direction.serverbound.get(&resource) {
+    } else if let Some(pkt) = direction.serverbound.get(&locator) {
         (pkt.protocol_id, false)
     } else {
-        panic!("packet not found: {}", resource)
+        panic!("packet not found: {}", locator)
     }
 }
 
@@ -74,8 +74,8 @@ fn find_packet(path: &str, state: Ident) -> (u8, bool) {
 #[proc_macro_error]
 pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item = syn::parse_macro_input!(input as syn::ItemStruct);
-    let PacketArgs { path, state } = syn::parse(args).unwrap_or_abort();
-    let (packet_id, clientbound) = find_packet(&path, state);
+    let PacketArgs { resource, state } = syn::parse(args).unwrap_or_abort();
+    let (packet_id, clientbound) = find_packet(&resource, &state);
 
     // make every field public
     item.fields
@@ -118,6 +118,12 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
                     })
                 }
             }
+
+            impl From<#name> for crate::server::ServerboundPacket {
+                fn from(value: #name) -> Self {
+                    Self::#name(value)
+                }
+            }
         }
     };
 
@@ -125,6 +131,10 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
         #[allow(missing_docs)]
         #item
         #net_impl
+
+        impl crate::packet::PacketData for #name {
+            const ID: #varint = #varint(#packet_id);
+        }
     }
     .into()
 }

@@ -3,11 +3,9 @@
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::decode::Decode;
-use beacon_net::{
-    conn::Connection,
-    packet::{RawPacket, RawPacketReceiver, RawPacketSender},
-};
+use beacon_net::{conn::Connection, packet::RawPacket};
 use bevy_ecs::prelude::*;
+use crossbeam_channel::Sender;
 use miette::{IntoDiagnostic, Result};
 use tokio::{
     net::{TcpListener, TcpStream},
@@ -28,7 +26,6 @@ pub struct BeaconServer {
     tick: Interval,
     world: World,
     schedule: Schedule,
-    packet_tx: RawPacketSender,
 }
 
 /// Shared server state.
@@ -44,7 +41,7 @@ impl BeaconServer {
         let tick = tokio::time::interval(Duration::from_secs_f64(1. / TARGET_TPS));
         let (mut world, mut schedule) = (World::new(), Schedule::default());
         let config = beacon_config::ecs(&mut world, &mut schedule, config_path)?;
-        let packet_tx = RawPacketReceiver::ecs(&mut world, &mut schedule);
+        beacon_net::ecs(&mut schedule);
 
         // bind the server
         let addr: SocketAddr = (config.server.ip, config.server.port).into();
@@ -58,7 +55,6 @@ impl BeaconServer {
             tick,
             world,
             schedule,
-            packet_tx,
         })
     }
 
@@ -78,10 +74,11 @@ impl BeaconServer {
             tokio::select! {
                 Ok((sock, addr)) = self.listener.accept() => {
                     // spawn in the ecs
-                    let id = self.world.spawn(Connection::from(addr)).id();
+                    let (conn, tx) = Connection::new(addr);
+                    self.world.spawn(conn);
 
                     // spawn a task to handle the I/O side of the connection
-                    tokio::spawn(handle_connection(sock, addr, id, self.packet_tx.clone()));
+                    tokio::spawn(handle_connection(sock, addr, tx));
                 },
                 _ = self.state.cancel_token.cancelled() => break,
                 _ = self.tick.tick() => self.schedule.run(&mut self.world),
@@ -95,12 +92,7 @@ impl BeaconServer {
     }
 }
 
-async fn handle_connection(
-    sock: TcpStream,
-    addr: SocketAddr,
-    id: Entity,
-    packet_tx: RawPacketSender,
-) {
+async fn handle_connection(sock: TcpStream, addr: SocketAddr, tx: Sender<RawPacket>) {
     debug!(addr = %addr, "new connection established");
     let (mut reader, writer) = sock.into_split();
 
@@ -109,7 +101,7 @@ async fn handle_connection(
             error!(addr = %addr, "failed to read packet");
             break;
         };
-        let _ = packet_tx.send((id, packet));
+        let _ = tx.send(packet);
     }
 
     debug!(addr = %addr, "connection closed");
