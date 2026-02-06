@@ -4,6 +4,7 @@
 
 use std::{net::Ipv4Addr, path::Path};
 
+use bevy_ecs::resource::Resource;
 use figment::{
     Figment,
     providers::{Format, Toml},
@@ -13,7 +14,7 @@ use serde::Deserialize;
 const DEFAULT_CONFIG: &str = include_str!("../../assets/default-config.toml");
 
 /// The configuration for the server.
-#[derive(Deserialize)]
+#[derive(Resource, Debug, Deserialize)]
 pub struct Config {
     /// The host to bind to.
     pub host: Ipv4Addr,

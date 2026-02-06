@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+bevy_ecs.workspace = true
 figment = { workspace = true, features = ["toml"] }
 serde = { workspace = true, features = ["derive"] }
 

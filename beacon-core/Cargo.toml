@@ -7,8 +7,9 @@ edition.workspace = true
 beacon-codec.workspace = true
 beacon-config.workspace = true
 beacon-net.workspace = true
+bevy_ecs.workspace = true
 miette.workspace = true
-tokio = { workspace = true, features = ["net", "signal"] }
+tokio = { workspace = true, features = ["net", "signal", "time"] }
 tokio-util.workspace = true
 tracing.workspace = true
 

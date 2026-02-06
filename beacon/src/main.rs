@@ -46,6 +46,6 @@ async fn main() -> Result<()> {
     );
 
     let config = Config::load("config.toml").into_diagnostic()?;
-    let server = BeaconServer::new(config).await?;
+    let mut server = BeaconServer::new(config).await?;
     server.start().await
 }
