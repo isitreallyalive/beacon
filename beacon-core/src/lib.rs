@@ -3,7 +3,10 @@
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::decode::Decode;
-use beacon_net::{packet::RawPacket, server::Handshake};
+use beacon_net::{
+    conn::Connection,
+    packet::{RawPacket, RawPacketReceiver, RawPacketSender},
+};
 use bevy_ecs::prelude::*;
 use miette::{IntoDiagnostic, Result};
 use tokio::{
@@ -25,6 +28,7 @@ pub struct BeaconServer {
     tick: Interval,
     world: World,
     schedule: Schedule,
+    packet_tx: RawPacketSender,
 }
 
 /// Shared server state.
@@ -40,6 +44,7 @@ impl BeaconServer {
         let tick = tokio::time::interval(Duration::from_secs_f64(1. / TARGET_TPS));
         let (mut world, mut schedule) = (World::new(), Schedule::default());
         let config = beacon_config::ecs(&mut world, &mut schedule, config_path)?;
+        let packet_tx = RawPacketReceiver::ecs(&mut world, &mut schedule);
 
         // bind the server
         let addr: SocketAddr = (config.server.ip, config.server.port).into();
@@ -53,6 +58,7 @@ impl BeaconServer {
             tick,
             world,
             schedule,
+            packet_tx,
         })
     }
 
@@ -71,7 +77,11 @@ impl BeaconServer {
         loop {
             tokio::select! {
                 Ok((sock, addr)) = self.listener.accept() => {
-                    tokio::spawn(handle_connection(sock, addr));
+                    // spawn in the ecs
+                    let id = self.world.spawn(Connection::from(addr)).id();
+
+                    // spawn a task to handle the I/O side of the connection
+                    tokio::spawn(handle_connection(sock, addr, id, self.packet_tx.clone()));
                 },
                 _ = self.state.cancel_token.cancelled() => break,
                 _ = self.tick.tick() => self.schedule.run(&mut self.world),
@@ -85,7 +95,12 @@ impl BeaconServer {
     }
 }
 
-async fn handle_connection(sock: TcpStream, addr: SocketAddr) {
+async fn handle_connection(
+    sock: TcpStream,
+    addr: SocketAddr,
+    id: Entity,
+    packet_tx: RawPacketSender,
+) {
     debug!(addr = %addr, "new connection established");
     let (mut reader, writer) = sock.into_split();
 
@@ -94,9 +109,7 @@ async fn handle_connection(sock: TcpStream, addr: SocketAddr) {
             error!(addr = %addr, "failed to read packet");
             break;
         };
-
-        let handshake = Handshake::decode(&mut packet.data.as_ref()).await;
-        println!("{handshake:?}");
+        let _ = packet_tx.send((id, packet));
     }
 
     debug!(addr = %addr, "connection closed");

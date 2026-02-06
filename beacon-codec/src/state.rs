@@ -1,7 +1,9 @@
+use bevy_ecs::prelude::*;
+
 use crate::{prelude::*, types::VarInt};
 
 /// The protocol state of a connection, which determines which packets can be sent and received.
-#[derive(Clone, Copy, Debug, Display, Default, PartialEq, Eq)]
+#[derive(Component, Clone, Copy, Debug, Display, Default, PartialEq, Eq)]
 pub enum ProtocolState {
     /// Initial state after connection - doesn't really exist in the protocol.
     /// Used in place of [None](Option::None) to avoid using [Option].

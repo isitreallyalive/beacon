@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+bevy_ecs.workspace = true
 derive_more = { workspace = true, features = ["deref", "display", "from"] }
 miette.workspace = true
 pastey.workspace = true

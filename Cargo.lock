@@ -153,6 +153,7 @@ dependencies = [
 name = "beacon-codec"
 version = "0.0.0"
 dependencies = [
+ "bevy_ecs",
  "derive_more",
  "miette",
  "pastey",
@@ -212,7 +213,10 @@ version = "0.0.0"
 dependencies = [
  "beacon-codec",
  "beacon-macros",
+ "bevy_ecs",
  "bytes",
+ "crossbeam-channel",
+ "derive_more",
  "tokio",
 ]
 
