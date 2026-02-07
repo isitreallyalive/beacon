@@ -1,6 +1,8 @@
-use std::{net::Ipv4Addr, path::Path, sync::LazyLock};
+use std::{
+    net::Ipv4Addr,
+    path::{Path, PathBuf},
+};
 
-use base64::prelude::*;
 use bevy_ecs::prelude::*;
 use figment::{
     Figment,
@@ -11,11 +13,6 @@ use serde::Deserialize;
 use crate::ConfigError;
 
 const DEFAULT_CONFIG: &str = include_str!("../../assets/beacon.default.toml");
-pub const DEFAULT_FAVICON: LazyLock<String> = LazyLock::new(|| {
-    let content = include_bytes!("../../assets/favicon.default.png");
-    let encoded = BASE64_STANDARD.encode(&content);
-    format!("data:image/png;base64,{encoded}")
-});
 
 /// The configuration for the server.
 #[derive(Resource, Debug, Clone, Deserialize)]
@@ -32,7 +29,10 @@ pub struct ServerConfig {
     /// The port to bind to.
     pub port: u16,
     /// Whether the server should report its status.
+    // todo: use
     pub status: bool,
+    /// The path to the server icon.
+    pub icon: PathBuf,
     /// The Message of the Day
     pub motd: String,
     /// The maximum number of players allowed on the server.
@@ -43,12 +43,14 @@ pub struct ServerConfig {
 impl Config {
     /// Load the configuration from a file, with defaults.
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
-        let config = Figment::new()
+        let config: Config = Figment::new()
             // load the default configuration
             .merge(Toml::string(DEFAULT_CONFIG))
             // override it with the user's configuration
             .merge(Toml::file(path))
             .extract()?;
+
+        crate::favicon::load(&config.server.icon)?;
         Ok(config)
     }
 }

@@ -2,5 +2,6 @@
 ip = "0.0.0.0"
 port = 25565
 status = true
+icon = "favicon.png"
 motd = "A Beacon Server"
 max-players = 20

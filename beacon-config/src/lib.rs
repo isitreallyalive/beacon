@@ -9,10 +9,12 @@ use bevy_ecs::prelude::*;
 use miette::Diagnostic;
 use thiserror::Error;
 
-pub use crate::config::{Config, DEFAULT_FAVICON};
+pub use crate::config::Config;
+pub use crate::favicon::*;
 use crate::reload::ConfigManager;
 
 mod config;
+mod favicon;
 mod reload;
 
 /// Errors that can occur while managing configuration.
@@ -27,6 +29,11 @@ pub enum ConfigError {
     #[error("failed to read configuration file")]
     #[diagnostic(help("check that the file exists and is a valid TOML file"))]
     Read(#[from] figment::Error),
+
+    /// An error occurred while managing the favicon.
+    #[error(transparent)]
+    #[diagnostic(transparent)]
+    Favicon(#[from] favicon::FaviconError),
 }
 
 /// Add configuration to the ECS.
