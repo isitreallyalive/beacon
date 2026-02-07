@@ -11,3 +11,10 @@ pub struct Handshake {
     server_port: u16,
     intent: ProtocolState
 }
+
+#[handler(Handshake)]
+fn handle(mut query: Query<&mut ProtocolState>) {
+    if let Ok(mut state) = query.get_mut(event.entity) {
+        *state = event.packet.intent;
+    }
+}

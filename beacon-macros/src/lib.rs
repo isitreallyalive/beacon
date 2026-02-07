@@ -5,11 +5,14 @@
 use std::{collections::HashMap, sync::LazyLock};
 
 use darling::FromMeta;
-use proc_macro::TokenStream;
+use proc_macro::{Span, TokenStream};
 use proc_macro_error2::{ResultExt, proc_macro_error};
 use quote::quote;
 use serde::Deserialize;
-use syn::{Field, Ident, Visibility, token::Pub};
+use syn::{
+    Field, FnArg, Ident, VisRestricted, Visibility,
+    token::{Pub, Token},
+};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -85,6 +88,8 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
     // aliases
     let decode = quote! { beacon_codec::decode };
     let varint = quote! { beacon_codec::types::VarInt };
+    let protostate = quote! { beacon_codec::ProtocolState };
+    let entity = quote! { bevy_ecs::entity::Entity };
 
     // encode/decode
     let name = &item.ident;
@@ -118,14 +123,9 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
                     })
                 }
             }
-
-            impl From<#name> for crate::server::ServerboundPacket {
-                fn from(value: #name) -> Self {
-                    Self::#name(value)
-                }
-            }
         }
     };
+    let event = Ident::new(&format!("{name}Event"), Span::call_site().into());
 
     quote! {
         #[allow(missing_docs)]
@@ -134,6 +134,55 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
 
         impl crate::packet::PacketData for #name {
             const ID: #varint = #varint(#packet_id);
+            const STATE: #protostate = #protostate::#state;
+        }
+
+        impl #name {
+            #[doc = concat!("Convert this packet into a [[", stringify!(#event), "]] for the given entity.") ]
+            pub fn event(self, entity: #entity) -> #event {
+                #event { entity, packet: self }
+            }
+        }
+
+        #[doc = concat!("Event fired when a [[", stringify!(#name), "]] packet is received.") ]
+        #[derive(bevy_ecs::event::EntityEvent)]
+        pub(crate) struct #event {
+            pub entity: #entity,
+            pub packet: #name,
+        }
+    }
+    .into()
+}
+
+/// Create a handler for a packet.
+#[proc_macro_attribute]
+#[proc_macro_error]
+pub fn handler(args: TokenStream, input: TokenStream) -> TokenStream {
+    let mut item = syn::parse_macro_input!(input as syn::ItemFn);
+    let packet: Ident = syn::parse(args).unwrap_or_abort();
+    let call_site = Span::call_site().into();
+    let event = Ident::new(&format!("{}Event", packet), call_site);
+
+    // rename to handle
+    item.sig.ident = Ident::new("handle", call_site);
+
+    // add event parameter to function signature
+    item.sig.inputs.insert(
+        0,
+        syn::parse_quote! { event: bevy_ecs::observer::On<#event> },
+    );
+
+    // make it public to the crate
+    item.vis = Visibility::Restricted(VisRestricted {
+        pub_token: Default::default(),
+        paren_token: Default::default(),
+        in_token: None,
+        path: Box::new(syn::parse_quote! { crate }),
+    });
+
+    quote! {
+        impl #packet {
+            #item
         }
     }
     .into()

@@ -3,7 +3,7 @@
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::decode::Decode;
-use beacon_net::{conn::Connection, packet::RawPacket};
+use beacon_net::{Connection, packet::RawPacket};
 use bevy_ecs::prelude::*;
 use crossbeam_channel::Sender;
 use miette::{IntoDiagnostic, Result};
@@ -41,7 +41,7 @@ impl BeaconServer {
         let tick = tokio::time::interval(Duration::from_secs_f64(1. / TARGET_TPS));
         let (mut world, mut schedule) = (World::new(), Schedule::default());
         let config = beacon_config::ecs(&mut world, &mut schedule, config_path)?;
-        beacon_net::ecs(&mut schedule);
+        schedule.add_systems(beacon_net::listen);
 
         // bind the server
         let addr: SocketAddr = (config.server.ip, config.server.port).into();
@@ -74,8 +74,7 @@ impl BeaconServer {
             tokio::select! {
                 Ok((sock, addr)) = self.listener.accept() => {
                     // spawn in the ecs
-                    let (conn, tx) = Connection::new(addr);
-                    self.world.spawn(conn);
+                    let tx = Connection::spawn(&mut self.world);
 
                     // spawn a task to handle the I/O side of the connection
                     tokio::spawn(handle_connection(sock, addr, tx));
@@ -98,7 +97,6 @@ async fn handle_connection(sock: TcpStream, addr: SocketAddr, tx: Sender<RawPack
 
     loop {
         let Ok(packet) = RawPacket::decode(&mut reader).await else {
-            error!(addr = %addr, "failed to read packet");
             break;
         };
         let _ = tx.send(packet);
