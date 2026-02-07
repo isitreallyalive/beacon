@@ -15,6 +15,7 @@ version = "0.0.0"
 edition = "2024"
 
 [workspace.dependencies]
+base64 = "0.22.1"
 beacon-codec = { path = "beacon-codec" }
 beacon-config = { version = "0.0.0", path = "beacon-config" }
 beacon-core = { path = "beacon-core" }

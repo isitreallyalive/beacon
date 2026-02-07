@@ -1,4 +1,4 @@
-use beacon_config::Config;
+use beacon_config::{Config, DEFAULT_FAVICON};
 use beacon_data::{LATEST_SUPPORTED_VERSION, PROTOCOL_VERSION};
 
 use crate::{client::status::*, conn::PacketSender, prelude::*};
@@ -22,7 +22,7 @@ fn handle(config: Res<Config>, connections: Query<&mut PacketSender>) -> Result<
             sample: Vec::new()
         },
         description: Description { text: config.server.motd.clone() },
-        favicon: None,
+        favicon: Some(DEFAULT_FAVICON.clone()),
         secure_chat: false
     };
     let packet = StatusResponse::from(payload);

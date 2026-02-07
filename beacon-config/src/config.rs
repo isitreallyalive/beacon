@@ -1,5 +1,6 @@
-use std::{net::Ipv4Addr, path::Path};
+use std::{net::Ipv4Addr, path::Path, sync::LazyLock};
 
+use base64::prelude::*;
 use bevy_ecs::prelude::*;
 use figment::{
     Figment,
@@ -10,6 +11,11 @@ use serde::Deserialize;
 use crate::ConfigError;
 
 const DEFAULT_CONFIG: &str = include_str!("../../assets/beacon.default.toml");
+pub const DEFAULT_FAVICON: LazyLock<String> = LazyLock::new(|| {
+    let content = include_bytes!("../../assets/favicon.default.png");
+    let encoded = BASE64_STANDARD.encode(&content);
+    format!("data:image/png;base64,{encoded}")
+});
 
 /// The configuration for the server.
 #[derive(Resource, Debug, Clone, Deserialize)]

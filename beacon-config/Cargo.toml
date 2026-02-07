@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+base64.workspace = true
 bevy_ecs.workspace = true
 figment = { workspace = true, features = ["toml"] }
 flume.workspace = true

@@ -9,7 +9,7 @@ use bevy_ecs::prelude::*;
 use miette::Diagnostic;
 use thiserror::Error;
 
-pub use crate::config::Config;
+pub use crate::config::{Config, DEFAULT_FAVICON};
 use crate::reload::ConfigManager;
 
 mod config;
