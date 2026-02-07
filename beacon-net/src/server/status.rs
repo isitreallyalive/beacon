@@ -1,6 +1,7 @@
 use beacon_config::Config;
+use beacon_data::{LATEST_SUPPORTED_VERSION, PROTOCOL_VERSION};
 
-use crate::{RawSender, client::status::*, prelude::*};
+use crate::{client::status::*, conn::PacketSender, prelude::*};
 
 /// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Status_Request>
 #[packet(resource = "status_request", state = Status)]
@@ -8,9 +9,12 @@ use crate::{RawSender, client::status::*, prelude::*};
 pub struct StatusRequest;
 
 #[handler(StatusRequest)]
-fn handle(config: Res<Config>, connections: Query<&mut RawSender>) -> Result<()> {
+fn handle(config: Res<Config>, connections: Query<&mut PacketSender>) -> Result<()> {
     let payload = StatusResponsePayload {
-        version: Version::default(),
+        version: Version {
+            name: LATEST_SUPPORTED_VERSION.to_string(),
+            protocol: PROTOCOL_VERSION,
+        },
         players: Players {
             max: config.server.max_players,
             // todo: change to actually online players, rather than connections
@@ -22,8 +26,9 @@ fn handle(config: Res<Config>, connections: Query<&mut RawSender>) -> Result<()>
         secure_chat: false
     };
     let packet = StatusResponse::from(payload);
-    let mut writer = connections.get(event.entity)?;
-    packet.blocking_raw().map(|p| writer.send(p))?;
+    let writer = connections.get(event.entity)?;
+
+    writer.send(packet.blocking_raw()?)?;
 
     Ok(())
 }

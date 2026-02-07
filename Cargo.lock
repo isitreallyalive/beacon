@@ -225,6 +225,7 @@ dependencies = [
  "futures",
  "serde",
  "tokio",
+ "tokio-util",
  "tracing",
 ]
 

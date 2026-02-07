@@ -3,7 +3,7 @@
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
 use beacon_codec::{decode::Decode, encode::Encode};
-use beacon_net::{Connection, packet::RawPacket};
+use beacon_net::{conn::Connection, packet::RawPacket};
 use bevy_ecs::prelude::*;
 use flume::{Receiver, Sender};
 use miette::{IntoDiagnostic, Result};
@@ -41,7 +41,7 @@ impl BeaconServer {
         let tick = tokio::time::interval(Duration::from_secs_f64(1. / TARGET_TPS));
         let (mut world, mut schedule) = (World::new(), Schedule::default());
         let config = beacon_config::ecs(&mut world, &mut schedule, config_path)?;
-        schedule.add_systems(beacon_net::listen);
+        beacon_net::ecs(&mut schedule);
 
         // bind the server
         let addr: SocketAddr = (config.server.ip, config.server.port).into();
@@ -74,10 +74,10 @@ impl BeaconServer {
             tokio::select! {
                 Ok((sock, addr)) = self.listener.accept() => {
                     // spawn in the ecs
-                    let (tx, rx) = Connection::spawn(&mut self.world);
+                    let (tx, rx, token) = Connection::spawn(&mut self.world);
 
                     // spawn a task to read packets from the socket and send them to the connection
-                    tokio::spawn(read_packets(sock, addr, tx, rx));
+                    tokio::spawn(read_packets(sock, addr, tx, rx, token));
                 },
                 _ = self.state.cancel_token.cancelled() => break,
                 _ = self.tick.tick() => self.schedule.run(&mut self.world),
@@ -96,6 +96,7 @@ async fn read_packets(
     addr: SocketAddr,
     tx: Sender<RawPacket>,
     rx: Receiver<RawPacket>,
+    token: CancellationToken,
 ) {
     debug!(addr = %addr, "new connection established");
     let (mut reader, mut writer) = sock.into_split();
@@ -113,4 +114,5 @@ async fn read_packets(
     }
 
     debug!(addr = %addr, "connection closed");
+    token.cancel();
 }

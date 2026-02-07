@@ -99,7 +99,7 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
         // need Encode
         let encode_fields = item.fields.iter().map(|Field { ident: name, .. }| {
             quote! {
-                &self.#name.encode(write).await?;
+                self.#name.encode(write).await?;
             }
         });
 

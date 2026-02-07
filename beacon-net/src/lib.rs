@@ -2,14 +2,46 @@
 //!
 //! This crate contains Minecraft protocol packet definitions and utilities for encoding/decoding them.
 
-use beacon_codec::ProtocolState;
+use beacon_codec::{ProtocolState, decode::Decode};
 use bevy_ecs::prelude::*;
-use flume::{Receiver, Sender};
+use futures::executor::block_on;
+
+use crate::server::*;
+use crate::{
+    conn::{Despawn, PacketReceiver},
+    packet::PacketData,
+};
 
 #[macro_use]
 extern crate derive_more;
 #[macro_use]
 extern crate tracing;
+
+macro_rules! dispatch {
+    ($packet:ident, $raw:expr, $entity:expr, $commands:expr) => {
+        match block_on($packet::decode(&mut $raw.data.as_ref())) {
+            Ok(packet) => $commands.trigger(packet.event($entity)),
+            Err(err) => {
+                $commands.entity($entity).despawn();
+                error!(%err, "failed to decode packet");
+            }
+        }
+    };
+}
+
+/// Register all networking systems with the ECS.
+pub fn ecs(schedule: &mut Schedule) {
+    schedule.add_systems((listen, despawn));
+}
+
+/// Despawn closed connections.
+fn despawn(mut commands: Commands, query: Query<(Entity, &Despawn)>) {
+    for (entity, cancel) in query.iter() {
+        if cancel.is_cancelled() {
+            commands.entity(entity).despawn();
+        }
+    }
+}
 
 macro_rules! packets {
     (
@@ -17,15 +49,9 @@ macro_rules! packets {
             $packet:ident
         ),*
     ) => {
-        use beacon_codec::decode::Decode;
-        use futures::executor::block_on;
-
-        use crate::packet::{RawPacket, PacketData};
-        use crate::server::*;
-
         /// Listen for incoming packets and trigger events for them.
-        pub fn listen(
-            mut query: Query<(Entity, &ProtocolState, &RawReceiver)>,
+        fn listen(
+            mut query: Query<(Entity, &ProtocolState, &PacketReceiver)>,
             mut commands: Commands,
         ) -> Result<()> {
             // todo: take turns reading packets
@@ -34,19 +60,19 @@ macro_rules! packets {
                     match (state, packet.id) {
                         (&Handshake::STATE, Handshake::ID) => {
                             // handshake must be processed before any other subsequent packets.
-                            let event = block_on(Handshake::decode(&mut packet.data.as_ref()))?.event(entity);
-                            commands.trigger(event);
+                            dispatch!(Handshake, packet, entity, commands);
                             break;
                         },
                         $(
                             (&$packet::STATE, $packet::ID) => {
                                 // todo: close connection on error
-                                let event = block_on($packet::decode(&mut packet.data.as_ref()))?.event(entity);
-                                commands.trigger(event);
+                                dispatch!($packet, packet, entity, commands);
                             },
                         )*
-                        // unknown packet
-                        _ => unimplemented!()
+                        _ => {
+                            // unknown packet
+                            warn!(id = %packet.id, state = %state, "unknown packet");
+                        }
                     }
                 }
             }
@@ -54,22 +80,12 @@ macro_rules! packets {
             Ok(())
         }
 
-        impl Connection {
-            /// Spawn a new connection and returns a channel to send raw packet to it, and receive raw packets from it.
-            pub fn spawn(world: &mut World) -> (flume::Sender<RawPacket>, flume::Receiver<RawPacket>) {
-                let (in_tx, in_rx) = flume::bounded(1024);
-                let (out_tx, out_rx) = flume::bounded(1024);
-
-                world.spawn(Self {
-                    receiver: RawReceiver(in_rx),
-                    writer: RawSender(out_tx),
-                    state: ProtocolState::default(),
-                })
-                    .observe(Handshake::handle)
-                    $(.observe($packet::handle))*;
-
-                (in_tx, out_rx)
-            }
+        /// Add handlers for all packets to an entity.
+        fn observe_packets(entity: &mut EntityWorldMut) {
+            entity.observe(Handshake::handle);
+            $(
+                entity.observe($packet::handle);
+            )*
         }
     };
 }
@@ -89,14 +105,16 @@ macro_rules! import {
 }
 
 /// Clientbound packets.
-pub mod client {
+mod client {
+    #[allow(missing_docs)]
     pub mod status;
-    pub use status::StatusResponse;
 }
 /// Serverbound packets.
-pub mod server {
+mod server {
     import!(handshake, status);
 }
+/// Connection bundle.
+pub mod conn;
 /// Packet definitions and utilities.
 pub mod packet;
 
@@ -104,20 +122,4 @@ mod prelude {
     pub use beacon_codec::types::*;
     pub use beacon_macros::{handler, packet};
     pub use bevy_ecs::prelude::*;
-}
-
-/// Sends raw packets to the connection for processing.
-#[derive(Component, Deref)]
-pub struct RawReceiver(Receiver<RawPacket>);
-
-#[derive(Component, Deref)]
-pub struct RawSender(Sender<RawPacket>);
-
-// todo: despawn dead connections
-/// A connection to the server.
-#[derive(Bundle)]
-pub struct Connection {
-    receiver: RawReceiver,
-    writer: RawSender,
-    state: ProtocolState,
 }

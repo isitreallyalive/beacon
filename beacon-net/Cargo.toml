@@ -15,6 +15,7 @@ flume.workspace = true
 futures.workspace = true # todo: remove need for blocking
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["io-util"] }
+tokio-util.workspace = true
 tracing.workspace = true
 
 [lints]
