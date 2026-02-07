@@ -9,10 +9,7 @@ use proc_macro::{Span, TokenStream};
 use proc_macro_error2::{ResultExt, proc_macro_error};
 use quote::quote;
 use serde::Deserialize;
-use syn::{
-    Field, FnArg, Ident, VisRestricted, Visibility,
-    token::{Pub, Token},
-};
+use syn::{Field, Ident, VisRestricted, Visibility, token::Pub};
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -87,6 +84,10 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
 
     // aliases
     let decode = quote! { beacon_codec::decode };
+    let encode = quote! { beacon_codec::encode };
+    let raw = quote! { crate::packet::RawPacket };
+    let io = quote! { tokio::io };
+    let data = quote! { crate::packet::PacketData };
     let varint = quote! { beacon_codec::types::VarInt };
     let protostate = quote! { beacon_codec::ProtocolState };
     let entity = quote! { bevy_ecs::entity::Entity };
@@ -95,8 +96,38 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
     let name = &item.ident;
 
     let net_impl = if clientbound {
-        // todo: need Encode
-        quote! {}
+        // need Encode
+        let encode_fields = item.fields.iter().map(|Field { ident: name, .. }| {
+            quote! {
+                &self.#name.encode(write).await?;
+            }
+        });
+
+        quote! {
+            impl #encode::Encode for #name {
+                async fn encode<W: #io::AsyncWrite + Unpin>(&self, write: &mut W) -> Result<(), #encode::EncodeError> {
+                    #(#encode_fields)*
+                    Ok(())
+                }
+            }
+
+            impl #name {
+                /// Turn this packet into a raw packet synchronously.
+                pub fn blocking_raw(self) -> Result<#raw, #encode::EncodeError> {
+                    use #encode::Encode;
+
+                    futures::executor::block_on(async {
+                        let mut buf = Vec::new();
+                        self.encode(&mut buf).await?;
+
+                        Ok(#raw {
+                            id: <#name as #data>::ID,
+                            data: buf.into(),
+                        })
+                    })
+                }
+            }
+        }
     } else {
         // need Decode
         let decode_fields = item.fields.iter().map(
@@ -115,7 +146,7 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
 
         quote! {
             impl #decode::Decode for #name {
-                async fn decode<R: tokio::io::AsyncRead + Unpin>(read: &mut R) -> Result<Self, #decode::DecodeError> {
+                async fn decode<R: #io::AsyncRead + Unpin>(read: &mut R) -> Result<Self, #decode::DecodeError> {
                     #(#decode_fields)*
 
                     Ok(Self {
@@ -132,7 +163,7 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
         #item
         #net_impl
 
-        impl crate::packet::PacketData for #name {
+        impl #data for #name {
             const ID: #varint = #varint(#packet_id);
             const STATE: #protostate = #protostate::#state;
         }

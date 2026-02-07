@@ -1,7 +1,12 @@
-use beacon_codec::{ProtocolState, decode::*, types::VarInt};
+use beacon_codec::{
+    ProtocolState,
+    decode::*,
+    encode::{Encode, EncodeError},
+    types::VarInt,
+};
 use bevy_ecs::prelude::*;
 use bytes::{Bytes, BytesMut};
-use tokio::io::{AsyncRead, AsyncReadExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 /// A raw packet, before any processing is done.
 #[derive(Debug)]
@@ -26,6 +31,20 @@ impl Decode for RawPacket {
             id,
             data: data.freeze(),
         })
+    }
+}
+
+impl Encode for RawPacket {
+    async fn encode<W: AsyncWrite + Unpin>(&self, write: &mut W) -> Result<(), EncodeError> {
+        let mut buf = Vec::new();
+        self.id.encode(&mut buf).await?;
+        buf.extend_from_slice(&self.data);
+
+        let length = VarInt(buf.len() as i32);
+        length.encode(write).await?;
+        write.write_all(&buf).await?;
+
+        Ok(())
     }
 }
 

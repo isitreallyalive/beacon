@@ -3,7 +3,8 @@
 //! This crate contains Minecraft protocol packet definitions and utilities for encoding/decoding them.
 
 use beacon_codec::ProtocolState;
-use bevy_ecs::{prelude::*, system::SystemState, world::CommandQueue};
+use bevy_ecs::prelude::*;
+use flume::{Receiver, Sender};
 
 #[macro_use]
 extern crate derive_more;
@@ -54,18 +55,20 @@ macro_rules! packets {
         }
 
         impl Connection {
-            /// Spawn a new connection and return a sender for raw packets.
-            pub fn spawn(world: &mut World) -> crossbeam_channel::Sender<RawPacket> {
-                let (tx, rx) = crossbeam_channel::bounded(1024);
+            /// Spawn a new connection and returns a channel to send raw packet to it, and receive raw packets from it.
+            pub fn spawn(world: &mut World) -> (flume::Sender<RawPacket>, flume::Receiver<RawPacket>) {
+                let (in_tx, in_rx) = flume::bounded(1024);
+                let (out_tx, out_rx) = flume::bounded(1024);
 
                 world.spawn(Self {
-                    receiver: RawReceiver(rx),
+                    receiver: RawReceiver(in_rx),
+                    writer: RawSender(out_tx),
                     state: ProtocolState::default(),
                 })
                     .observe(Handshake::handle)
                     $(.observe($packet::handle))*;
 
-                tx
+                (in_tx, out_rx)
             }
         }
     };
@@ -86,7 +89,10 @@ macro_rules! import {
 }
 
 /// Clientbound packets.
-pub mod client {}
+pub mod client {
+    pub mod status;
+    pub use status::StatusResponse;
+}
 /// Serverbound packets.
 pub mod server {
     import!(handshake, status);
@@ -102,11 +108,16 @@ mod prelude {
 
 /// Sends raw packets to the connection for processing.
 #[derive(Component, Deref)]
-pub struct RawReceiver(crossbeam_channel::Receiver<RawPacket>);
+pub struct RawReceiver(Receiver<RawPacket>);
 
+#[derive(Component, Deref)]
+pub struct RawSender(Sender<RawPacket>);
+
+// todo: despawn dead connections
 /// A connection to the server.
 #[derive(Bundle)]
 pub struct Connection {
     receiver: RawReceiver,
+    writer: RawSender,
     state: ProtocolState,
 }

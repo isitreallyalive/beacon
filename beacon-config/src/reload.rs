@@ -4,7 +4,7 @@ use std::{
 };
 
 use bevy_ecs::prelude::*;
-use crossbeam_channel::Receiver;
+use flume::Receiver;
 use miette::Report;
 use notify::{Event, EventKind, Watcher};
 
@@ -23,7 +23,7 @@ pub struct ConfigManager {
 impl ConfigManager {
     /// Create a new configuration manager that watches the given path for changes.
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
-        let (tx, rx) = crossbeam_channel::bounded(1);
+        let (tx, rx) = flume::bounded(1);
 
         // create a file watcher
         let mut watcher = notify::recommended_watcher({

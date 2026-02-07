@@ -9,6 +9,10 @@ pub enum EncodeError {
     /// A miscellaneous I/O error occurred while writing to the client.
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    /// An error occurred when serializing a value to JSON.
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
 /// Trait for types that can be encoded and sent to a Minecraft client.

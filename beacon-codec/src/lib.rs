@@ -17,8 +17,10 @@ pub mod decode;
 
 /// Common types used by the Minecraft protocol.
 pub mod types {
+    pub use json::Json;
     pub use varint::VarInt;
 
+    mod json;
     mod number;
     mod string;
     mod varint;

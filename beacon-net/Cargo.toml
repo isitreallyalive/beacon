@@ -5,12 +5,15 @@ edition.workspace = true
 
 [dependencies]
 beacon-codec.workspace = true
+beacon-config.workspace = true
+beacon-data.workspace = true
 beacon-macros.workspace = true
 bevy_ecs.workspace = true
 bytes.workspace = true
-crossbeam-channel.workspace = true
 derive_more = { workspace = true, features = ["deref"] }
-futures.workspace = true
+flume.workspace = true
+futures.workspace = true # todo: remove need for blocking
+serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["io-util"] }
 tracing.workspace = true
 

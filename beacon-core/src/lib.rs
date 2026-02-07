@@ -2,10 +2,10 @@
 
 use std::{net::SocketAddr, path::Path, sync::Arc, time::Duration};
 
-use beacon_codec::decode::Decode;
+use beacon_codec::{decode::Decode, encode::Encode};
 use beacon_net::{Connection, packet::RawPacket};
 use bevy_ecs::prelude::*;
-use crossbeam_channel::Sender;
+use flume::{Receiver, Sender};
 use miette::{IntoDiagnostic, Result};
 use tokio::{
     net::{TcpListener, TcpStream},
@@ -74,10 +74,10 @@ impl BeaconServer {
             tokio::select! {
                 Ok((sock, addr)) = self.listener.accept() => {
                     // spawn in the ecs
-                    let tx = Connection::spawn(&mut self.world);
+                    let (tx, rx) = Connection::spawn(&mut self.world);
 
-                    // spawn a task to handle the I/O side of the connection
-                    tokio::spawn(handle_connection(sock, addr, tx));
+                    // spawn a task to read packets from the socket and send them to the connection
+                    tokio::spawn(read_packets(sock, addr, tx, rx));
                 },
                 _ = self.state.cancel_token.cancelled() => break,
                 _ = self.tick.tick() => self.schedule.run(&mut self.world),
@@ -91,15 +91,25 @@ impl BeaconServer {
     }
 }
 
-async fn handle_connection(sock: TcpStream, addr: SocketAddr, tx: Sender<RawPacket>) {
+async fn read_packets(
+    sock: TcpStream,
+    addr: SocketAddr,
+    tx: Sender<RawPacket>,
+    rx: Receiver<RawPacket>,
+) {
     debug!(addr = %addr, "new connection established");
-    let (mut reader, writer) = sock.into_split();
+    let (mut reader, mut writer) = sock.into_split();
 
     loop {
-        let Ok(packet) = RawPacket::decode(&mut reader).await else {
-            break;
-        };
-        let _ = tx.send(packet);
+        tokio::select! {
+            Ok(packet) = rx.recv_async() => {
+                let _ = packet.encode(&mut writer).await;
+            },
+            res = RawPacket::decode(&mut reader) => {
+                let Ok(packet) = res else { break; };
+                let _ = tx.send_async(packet).await;
+            }
+        }
     }
 
     debug!(addr = %addr, "connection closed");

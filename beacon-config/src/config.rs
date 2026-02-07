@@ -30,7 +30,7 @@ pub struct ServerConfig {
     /// The Message of the Day
     pub motd: String,
     /// The maximum number of players allowed on the server.
-    pub max_players: u16,
+    pub max_players: u32,
 }
 
 // todo: proper error handling for incorrect fields
