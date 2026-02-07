@@ -9,6 +9,8 @@ use crate::{observe_packets, packet::RawPacket};
 #[derive(Component, Deref)]
 pub struct PacketReceiver(Receiver<RawPacket>);
 
+// todo: stop using cancellation tokens and despawn when channel closes.
+// todo: make sure we don't write to a closed channel mid system.
 /// Sender for outgoing packets.
 #[derive(Component, Deref)]
 pub struct PacketSender(Sender<RawPacket>);
@@ -28,14 +30,11 @@ pub struct Connection {
 }
 
 impl Connection {
-    /// Spawn a new connection and add it to the world.
-    pub fn spawn(
-        world: &mut World,
-    ) -> (
-        flume::Sender<RawPacket>,
-        flume::Receiver<RawPacket>,
-        CancellationToken,
-    ) {
+    /// Spawn a new connection and add it to the world. Returns:
+    /// - a sender for incoming packets
+    /// - a receiver for outgoing packets
+    /// - a cancellation token to despawn the connection when it's closed
+    pub fn spawn(world: &mut World) -> (Sender<RawPacket>, Receiver<RawPacket>, CancellationToken) {
         // open channels
         let (in_tx, in_rx) = flume::bounded(1024);
         let (out_tx, out_rx) = flume::bounded(1024);

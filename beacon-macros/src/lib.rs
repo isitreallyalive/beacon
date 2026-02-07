@@ -94,6 +94,7 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
 
     // encode/decode
     let name = &item.ident;
+    let event = Ident::new(&format!("{name}Event"), Span::call_site().into());
 
     let net_impl = if clientbound {
         // need Encode
@@ -129,7 +130,7 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
             }
         }
     } else {
-        // need Decode
+        // need Decode and an event
         let decode_fields = item.fields.iter().map(
             |Field {
                  ident: name, ty, ..
@@ -154,9 +155,22 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
                     })
                 }
             }
+
+            #[doc = concat!("Event fired when a [[", stringify!(#name), "]] packet is received.") ]
+            #[derive(bevy_ecs::event::EntityEvent)]
+            pub(crate) struct #event {
+                pub entity: #entity,
+                pub packet: #name,
+            }
+
+            impl #name {
+                #[doc = concat!("Convert this packet into a [[", stringify!(#event), "]] for the given entity.") ]
+                pub fn event(self, entity: #entity) -> #event {
+                    #event { entity, packet: self }
+                }
+            }
         }
     };
-    let event = Ident::new(&format!("{name}Event"), Span::call_site().into());
 
     quote! {
         #[allow(missing_docs)]
@@ -166,20 +180,6 @@ pub fn packet(args: TokenStream, input: TokenStream) -> TokenStream {
         impl #data for #name {
             const ID: #varint = #varint(#packet_id);
             const STATE: #protostate = #protostate::#state;
-        }
-
-        impl #name {
-            #[doc = concat!("Convert this packet into a [[", stringify!(#event), "]] for the given entity.") ]
-            pub fn event(self, entity: #entity) -> #event {
-                #event { entity, packet: self }
-            }
-        }
-
-        #[doc = concat!("Event fired when a [[", stringify!(#name), "]] packet is received.") ]
-        #[derive(bevy_ecs::event::EntityEvent)]
-        pub(crate) struct #event {
-            pub entity: #entity,
-            pub packet: #name,
         }
     }
     .into()

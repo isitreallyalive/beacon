@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::prelude::*;
+use crate::{prelude::*, server::PingRequest};
 
 /// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Status_Response>
 #[packet(resource = "status_response", state = Status)]
@@ -12,6 +12,20 @@ impl From<StatusResponsePayload> for StatusResponse {
     fn from(payload: StatusResponsePayload) -> Self {
         Self {
             json: Json(payload),
+        }
+    }
+}
+
+/// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Ping_Response>
+#[packet(resource = "pong_response", state = Status)]
+pub struct PongResponse {
+    payload: i64,
+}
+
+impl From<PingRequest> for PongResponse {
+    fn from(request: PingRequest) -> Self {
+        Self {
+            payload: request.payload,
         }
     }
 }

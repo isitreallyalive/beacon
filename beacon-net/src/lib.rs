@@ -47,7 +47,7 @@ macro_rules! packets {
     (
         $(
             $packet:ident
-        ),*
+        )*
     ) => {
         /// Listen for incoming packets and trigger events for them.
         fn listen(
@@ -92,6 +92,7 @@ macro_rules! packets {
 
 packets! {
     StatusRequest
+    PingRequest
 }
 
 /// Re-export everything from a module.

@@ -32,3 +32,19 @@ fn handle(config: Res<Config>, connections: Query<&mut PacketSender>) -> Result<
 
     Ok(())
 }
+
+/// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Ping_Request>
+#[packet(resource = "ping_request", state = Status)]
+#[derive(Clone, Copy)]
+pub struct PingRequest {
+    payload: i64
+}
+
+#[handler(PingRequest)]
+fn handle(mut query: Query<&mut PacketSender>) -> Result<()> {
+    let writer = query.get_mut(event.entity)?;
+    let packet = PongResponse::from(event.packet);
+    writer.send(packet.blocking_raw()?)?;
+
+    Ok(())
+}

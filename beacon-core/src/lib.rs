@@ -74,10 +74,10 @@ impl BeaconServer {
             tokio::select! {
                 Ok((sock, addr)) = self.listener.accept() => {
                     // spawn in the ecs
-                    let (tx, rx, token) = Connection::spawn(&mut self.world);
+                    let (tx, rx, despawn) = Connection::spawn(&mut self.world);
 
                     // spawn a task to read packets from the socket and send them to the connection
-                    tokio::spawn(read_packets(sock, addr, tx, rx, token));
+                    tokio::spawn(read_packets(sock, addr, tx, rx, despawn));
                 },
                 _ = self.state.cancel_token.cancelled() => break,
                 _ = self.tick.tick() => self.schedule.run(&mut self.world),
@@ -96,7 +96,7 @@ async fn read_packets(
     addr: SocketAddr,
     tx: Sender<RawPacket>,
     rx: Receiver<RawPacket>,
-    token: CancellationToken,
+    despawn: CancellationToken,
 ) {
     debug!(addr = %addr, "new connection established");
     let (mut reader, mut writer) = sock.into_split();
@@ -114,5 +114,5 @@ async fn read_packets(
     }
 
     debug!(addr = %addr, "connection closed");
-    token.cancel();
+    despawn.cancel();
 }
