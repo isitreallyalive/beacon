@@ -25,7 +25,7 @@ fn handle(config: Res<Config>, query: Query<(&Despawn, &PacketSender)>) -> Resul
         players: Players {
             max: config.server.max_players,
             // todo: change to actually online players, rather than connections
-            online: query.iter().count() as u32,
+            online: query.iter().count().saturating_sub(1) as u32,
             sample: Vec::new()
         },
         description: Description { text: config.server.motd.clone() },

@@ -9,11 +9,14 @@ debug = ["bevy_ecs/debug"]
 [dependencies]
 beacon-codec.workspace = true
 beacon-config.workspace = true
+beacon-data.workspace = true
 beacon-net.workspace = true
 bevy_ecs.workspace = true
+bytes.workspace = true
 flume.workspace = true
 miette.workspace = true
-tokio = { workspace = true, features = ["net", "signal", "time"] }
+peekable = { workspace = true, features = ["tokio"] }
+tokio = { workspace = true, features = ["net", "signal"] }
 tokio-util.workspace = true
 tracing.workspace = true
 

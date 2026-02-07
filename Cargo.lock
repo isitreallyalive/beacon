@@ -283,10 +283,13 @@ version = "0.0.0"
 dependencies = [
  "beacon-codec",
  "beacon-config",
+ "beacon-data",
  "beacon-net",
  "bevy_ecs",
+ "bytes",
  "flume",
  "miette",
+ "peekable",
  "tokio",
  "tokio-util",
  "tracing",
@@ -1571,6 +1574,18 @@ name = "pastey"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b867cad97c0791bbd3aaa6472142568c6c9e8f71937e98379f584cfb0cf35bec"
+
+[[package]]
+name = "peekable"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "856f6fcbf377cb6bfb6af97dd3cf3fb82e1c6761e285568576ac5e8651a73160"
+dependencies = [
+ "bytes",
+ "pin-project-lite",
+ "smallvec",
+ "tokio",
+]
 
 [[package]]
 name = "pin-project"
