@@ -1,7 +1,7 @@
 use beacon_config::{Config, FAVICON};
 use beacon_data::{LATEST_SUPPORTED_VERSION, PROTOCOL_VERSION};
 
-use crate::{client::status::*, conn::PacketSender, prelude::*};
+use crate::{client::status::*, conn::{Despawn, PacketSender}, prelude::*};
 
 /// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Status_Request>
 #[packet(resource = "status_request", state = Status)]
@@ -9,7 +9,14 @@ use crate::{client::status::*, conn::PacketSender, prelude::*};
 pub struct StatusRequest;
 
 #[handler(StatusRequest)]
-fn handle(config: Res<Config>, connections: Query<&mut PacketSender>) -> Result<()> {
+fn handle(config: Res<Config>, query: Query<(&Despawn, &PacketSender)>) -> Result<()> {
+    // do not respond if status is disabled
+    let (despawn, sender) = query.get(event.entity)?;
+    if !config.server.status {
+        despawn.cancel();
+        return Ok(());
+     }
+
     let payload = StatusResponsePayload {
         version: Version {
             name: LATEST_SUPPORTED_VERSION.to_string(),
@@ -18,7 +25,7 @@ fn handle(config: Res<Config>, connections: Query<&mut PacketSender>) -> Result<
         players: Players {
             max: config.server.max_players,
             // todo: change to actually online players, rather than connections
-            online: connections.iter().count() as u32,
+            online: query.iter().count() as u32,
             sample: Vec::new()
         },
         description: Description { text: config.server.motd.clone() },
@@ -26,9 +33,8 @@ fn handle(config: Res<Config>, connections: Query<&mut PacketSender>) -> Result<
         secure_chat: false
     };
     let packet = StatusResponse::from(payload);
-    let writer = connections.get(event.entity)?;
 
-    writer.send(packet.blocking_raw()?)?;
+    sender.send(packet.blocking_raw()?)?;
 
     Ok(())
 }
@@ -41,10 +47,16 @@ pub struct PingRequest {
 }
 
 #[handler(PingRequest)]
-fn handle(mut query: Query<&mut PacketSender>) -> Result<()> {
-    let writer = query.get_mut(event.entity)?;
+fn handle(config: Res<Config>, query: Query<(&Despawn, &PacketSender)>) -> Result<()> {
+    // do not respond if status is disabled
+    let (despawn, sender) = query.get(event.entity)?;
+    if !config.server.status {
+        despawn.cancel();
+        return Ok(());
+     }
+
     let packet = PongResponse::from(event.packet);
-    writer.send(packet.blocking_raw()?)?;
+    sender.send(packet.blocking_raw()?)?;
 
     Ok(())
 }

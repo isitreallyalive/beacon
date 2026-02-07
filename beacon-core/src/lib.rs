@@ -109,10 +109,13 @@ async fn read_packets(
             res = RawPacket::decode(&mut reader) => {
                 let Ok(packet) = res else { break; };
                 let _ = tx.send_async(packet).await;
-            }
+            },
+            _ = despawn.cancelled() => break,
         }
     }
 
     debug!(addr = %addr, "connection closed");
-    despawn.cancel();
+    if !despawn.is_cancelled() {
+        despawn.cancel()
+    };
 }

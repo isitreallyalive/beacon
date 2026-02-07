@@ -29,7 +29,6 @@ pub struct ServerConfig {
     /// The port to bind to.
     pub port: u16,
     /// Whether the server should report its status.
-    // todo: use
     pub status: bool,
     /// The path to the server icon.
     pub icon: PathBuf,
