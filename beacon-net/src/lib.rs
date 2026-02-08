@@ -93,6 +93,7 @@ macro_rules! packets {
 packets! {
     StatusRequest
     PingRequest
+    LoginStart
 }
 
 /// Re-export everything from a module.
@@ -107,20 +108,21 @@ macro_rules! import {
 
 /// Clientbound packets.
 mod client {
-    #[allow(missing_docs)]
     pub mod status;
 }
 /// Serverbound packets.
 mod server {
-    import!(handshake, status);
+    import!(handshake, status, login);
 }
-/// Connection bundle.
+/// Connection components.
 pub mod conn;
 /// Packet definitions and utilities.
 pub mod packet;
+/// Player components.
+pub mod player;
 
 mod prelude {
     pub use beacon_codec::types::*;
-    pub use beacon_macros::{handler, packet};
+    pub use beacon_macros::{client, handler, server};
     pub use bevy_ecs::prelude::*;
 }

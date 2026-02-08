@@ -308,6 +308,7 @@ version = "0.0.0"
 dependencies = [
  "darling",
  "proc-macro-error2",
+ "proc-macro2",
  "quote",
  "serde",
  "serde_json",

@@ -3,7 +3,7 @@ use serde::Serialize;
 use crate::{prelude::*, server::PingRequest};
 
 /// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Status_Response>
-#[packet(resource = "status_response", state = Status)]
+#[client(resource = "status_response", state = Status)]
 pub struct StatusResponse {
     json: Json<StatusResponsePayload>,
 }
@@ -17,7 +17,7 @@ impl From<StatusResponsePayload> for StatusResponse {
 }
 
 /// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Ping_Response>
-#[packet(resource = "pong_response", state = Status)]
+#[client(resource = "pong_response", state = Status)]
 pub struct PongResponse {
     payload: i64,
 }

@@ -25,4 +25,4 @@ macro_rules! num {
     };
 }
 
-num!(u16, i64);
+num!(u16, u128, i64);

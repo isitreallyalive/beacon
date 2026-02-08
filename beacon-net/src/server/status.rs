@@ -4,7 +4,7 @@ use beacon_data::{LATEST_SUPPORTED_VERSION, PROTOCOL_VERSION};
 use crate::{client::status::*, conn::{Despawn, PacketSender}, prelude::*};
 
 /// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Status_Request>
-#[packet(resource = "status_request", state = Status)]
+#[server(resource = "status_request", state = Status)]
 #[derive(Debug)]
 pub struct StatusRequest;
 
@@ -40,7 +40,7 @@ fn handle(config: Res<Config>, query: Query<(&Despawn, &PacketSender)>) -> Resul
 }
 
 /// See: <https://minecraft.wiki/w/Java_Edition_protocol/Packets#Ping_Request>
-#[packet(resource = "ping_request", state = Status)]
+#[server(resource = "ping_request", state = Status)]
 #[derive(Clone, Copy)]
 pub struct PingRequest {
     payload: i64

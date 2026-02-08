@@ -6,7 +6,7 @@ use std::{
 use bevy_ecs::prelude::*;
 use flume::Receiver;
 use miette::Report;
-use notify::{Event, EventKind, Watcher};
+use notify::{Event, EventKind, Watcher, event::ModifyKind};
 
 use crate::{Config, ConfigError};
 
@@ -31,7 +31,10 @@ impl ConfigManager {
 
             move |e: Result<Event, notify::Error>| {
                 if let Ok(event) = e
-                    && matches!(event.kind, EventKind::Modify(_))
+                    && matches!(
+                        event.kind,
+                        EventKind::Modify(ModifyKind::Data(_) | ModifyKind::Any)
+                    )
                 {
                     let now = Instant::now();
                     if now.duration_since(last_reload) > DEBOUNCE_TIME {
